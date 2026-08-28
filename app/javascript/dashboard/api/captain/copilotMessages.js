@@ -13,6 +13,10 @@ class CopilotMessages extends ApiClient {
   create({ threadId, ...rest }) {
     return axios.post(`${this.url}/${threadId}/copilot_messages`, rest);
   }
+
+  submitToolResults(threadId, payload) {
+    return axios.post(`${this.url}/${threadId}/tool_results`, payload);
+  }
 }
 
 export default new CopilotMessages();

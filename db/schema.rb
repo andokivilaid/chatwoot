@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_08_28_104820) do
+ActiveRecord::Schema[7.2].define(version: 2026_08_28_154500) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -936,6 +936,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_08_28_104820) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "assistant_id"
+    t.jsonb "pending_client_tool_call"
     t.index ["account_id"], name: "index_copilot_threads_on_account_id"
     t.index ["assistant_id"], name: "index_copilot_threads_on_assistant_id"
     t.index ["user_id"], name: "index_copilot_threads_on_user_id"

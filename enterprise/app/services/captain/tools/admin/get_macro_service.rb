@@ -7,9 +7,6 @@ class Captain::Tools::Admin::GetMacroService < Captain::Tools::Admin::BaseTool
   param :macro_id, type: :integer, desc: 'ID of the macro to retrieve', required: true
 
   def execute(macro_id:)
-    macro = account.macros.find_by(id: macro_id)
-    return 'Macro not found' if macro.blank?
-
-    format_macro(macro)
+    capability_service(Captain::Capabilities::Macros::Get, macro_id: macro_id)
   end
 end

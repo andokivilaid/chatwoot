@@ -13,6 +13,23 @@ module Captain::ChatResponseHelper
     parsed
   end
 
+  def build_client_tool_response(halt_result)
+    payload = JSON.parse(halt_result.content)
+    client_tool_requests = payload['client_tool_request'] ? [payload['client_tool_request']] : payload.fetch('client_tool_requests', [])
+
+    parsed = {
+      'content' => '',
+      'reasoning' => 'Waiting for client tool execution',
+      'client_tool_requests' => client_tool_requests
+    }
+
+    persist_message(parsed, 'assistant')
+    parsed
+  rescue JSON::ParserError => e
+    Rails.logger.error "#{self.class.name} Assistant: #{@assistant.id}, Error parsing client tool halt: #{e.message}"
+    { 'content' => halt_result.content.to_s }
+  end
+
   def parse_json_response(content)
     content = content.gsub('```json', '').gsub('```', '')
     content = content.strip

@@ -35,6 +35,20 @@ class Captain::Copilot::ChatService < Llm::BaseAiService
     response
   end
 
+  def continue_with_tool_results(tool_results)
+    tool_results.each do |tool_result|
+      @messages << {
+        role: 'system',
+        content: "Tool #{tool_result[:name]} result: #{tool_result[:result].to_json}"
+      }
+    end
+
+    @copilot_thread&.update!(pending_client_tool_call: nil)
+    response = request_chat_completion
+    @account.increment_response_usage
+    response
+  end
+
   private
 
   def setup_user(config)
@@ -73,14 +87,20 @@ class Captain::Copilot::ChatService < Llm::BaseAiService
     tools = []
 
     tools << Captain::Tools::SearchDocumentationService.new(@assistant, user: @user)
-    tools << Captain::Tools::Copilot::GetConversationService.new(@assistant, user: @user)
-    tools << Captain::Tools::Copilot::SearchConversationsService.new(@assistant, user: @user)
-    tools << Captain::Tools::Copilot::GetContactService.new(@assistant, user: @user)
-    tools << Captain::Tools::Copilot::GetArticleService.new(@assistant, user: @user)
-    tools << Captain::Tools::Copilot::SearchArticlesService.new(@assistant, user: @user)
-    tools << Captain::Tools::Copilot::SearchContactsService.new(@assistant, user: @user)
     tools << Captain::Tools::Copilot::SearchLinearIssuesService.new(@assistant, user: @user)
-    tools.concat(Captain::Tools::Admin::Registry.build(@assistant, user: @user, copilot_thread: @copilot_thread))
+
+    Captain::Capabilities::Catalog.captain_capabilities_for(
+      user: @user,
+      account: @account,
+      exposure: 'copilot'
+    ).each do |capability|
+      tools << Captain::Tools::CapabilityTool.build(
+        @assistant,
+        capability: capability,
+        user: @user,
+        copilot_thread: @copilot_thread
+      )
+    end
 
     tools.select(&:active?)
   end
@@ -102,7 +122,7 @@ class Captain::Copilot::ChatService < Llm::BaseAiService
   end
 
   def admin_tools_enabled?
-    @tools.any?(Captain::Tools::Admin::BaseTool)
+    @tools.any? { |tool| tool.is_a?(Captain::Tools::Admin::BaseTool) || tool.is_a?(Captain::Tools::CapabilityTool) }
   end
 
   def account_id_context

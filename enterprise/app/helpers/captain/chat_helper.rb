@@ -13,6 +13,8 @@ module Captain::ChatHelper
       text, attachments = Captain::OpenAiMessageBuilderService.extract_text_and_attachments(last_content)
 
       response = attachments.any? ? chat.ask(text, with: attachments) : chat.ask(text)
+      return build_client_tool_response(response) if response.is_a?(RubyLLM::Tool::Halt)
+
       build_response(response)
     end
   rescue StandardError => e

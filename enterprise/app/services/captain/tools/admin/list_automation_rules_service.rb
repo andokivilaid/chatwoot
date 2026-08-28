@@ -8,12 +8,6 @@ class Captain::Tools::Admin::ListAutomationRulesService < Captain::Tools::Admin:
   param :active_only, type: :boolean, desc: 'When true, return only active rules'
 
   def execute(search: nil, active_only: false)
-    rules = account.automation_rules
-    rules = rules.active if ActiveModel::Type::Boolean.new.cast(active_only)
-    rules = rules.where('name ILIKE ?', "%#{search}%") if search.present?
-
-    return 'No automation rules found' if rules.none?
-
-    rules.limit(100).map { |rule| format_automation_rule(rule) }.join("\n---\n")
+    capability_service(Captain::Capabilities::AutomationRules::List, search: search, active_only: active_only)
   end
 end

@@ -79,6 +79,7 @@ RSpec.describe Captain::Tools::Copilot::GetArticleService do
     end
 
     context 'when article exists' do
+      let(:user) { create(:user, :administrator, account: account) }
       let(:portal) { create(:portal, account: account) }
       let(:article) { create(:article, account: account, portal: portal, author: user, title: 'Test Article', content: 'Content') }
 

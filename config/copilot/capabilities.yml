@@ -1,0 +1,1258 @@
+###### Captain Copilot + WebMCP capability catalog #######
+# id: unique capability identifier (also used as RubyLLM tool name)
+# title: Human-readable name
+# description_key: i18n key under captain.capabilities.*
+# domain: logical grouping
+# exposure: [copilot, webmcp]
+# webmcp_mode: declarative | imperative
+# route: dashboard route pattern (for frontend filtering)
+# permission: administrator | agent | custom role permission string
+# copilot_execution: server (default) | client (defer to browser via tool_results bridge)
+# params: tool parameter schema
+# handler.service: Captain::Capabilities::* service class
+#########################################################
+
+# --- Conversations (read) ---
+- id: search_conversations
+  title: Search Conversations
+  description_key: captain.capabilities.search_conversations
+  domain: conversations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: conversation_access
+  params:
+    query:
+      type: string
+      required: false
+      description: Search query for conversation content or contact
+    status:
+      type: string
+      required: false
+      description: Filter by status (open, resolved, pending, snoozed)
+    inbox_id:
+      type: integer
+      required: false
+      description: Filter by inbox ID
+  handler:
+    service: Captain::Capabilities::Conversations::Search
+
+- id: get_conversation
+  title: Get Conversation
+  description_key: captain.capabilities.get_conversation
+  domain: conversations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: conversation_access
+  params:
+    conversation_id:
+      type: integer
+      required: true
+      description: Display ID of the conversation
+  handler:
+    service: Captain::Capabilities::Conversations::Get
+
+# --- Conversation actions (write) ---
+- id: resolve_conversation
+  title: Resolve Conversation
+  description_key: captain.capabilities.resolve_conversation
+  domain: conversations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: conversation_access
+  params:
+    conversation_id:
+      type: integer
+      required: true
+      description: Display ID of the conversation
+    reason:
+      type: string
+      required: false
+      description: Brief reason for resolving
+  handler:
+    service: Captain::Capabilities::Conversations::Resolve
+
+- id: add_label_to_conversation
+  title: Add Label to Conversation
+  description_key: captain.capabilities.add_label_to_conversation
+  domain: conversations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: conversation_access
+  params:
+    conversation_id:
+      type: integer
+      required: true
+      description: Display ID of the conversation
+    label_name:
+      type: string
+      required: true
+      description: Label title to add
+  handler:
+    service: Captain::Capabilities::Conversations::AddLabel
+
+- id: assign_conversation
+  title: Assign Conversation
+  description_key: captain.capabilities.assign_conversation
+  domain: conversations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: conversation_access
+  params:
+    conversation_id:
+      type: integer
+      required: true
+      description: Display ID of the conversation
+    assignee_id:
+      type: integer
+      required: true
+      description: User ID to assign the conversation to
+  handler:
+    service: Captain::Capabilities::Conversations::Assign
+
+- id: add_private_note
+  title: Add Private Note
+  description_key: captain.capabilities.add_private_note
+  domain: conversations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: conversation_access
+  params:
+    conversation_id:
+      type: integer
+      required: true
+      description: Display ID of the conversation
+    content:
+      type: string
+      required: true
+      description: Private note content
+  handler:
+    service: Captain::Capabilities::Conversations::AddPrivateNote
+
+- id: update_conversation_priority
+  title: Update Conversation Priority
+  description_key: captain.capabilities.update_conversation_priority
+  domain: conversations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: conversation_access
+  params:
+    conversation_id:
+      type: integer
+      required: true
+      description: Display ID of the conversation
+    priority:
+      type: string
+      required: true
+      description: Priority level (urgent, high, medium, low, none)
+  handler:
+    service: Captain::Capabilities::Conversations::UpdatePriority
+
+# --- Contacts (read) ---
+- id: search_contacts
+  title: Search Contacts
+  description_key: captain.capabilities.search_contacts
+  domain: contacts
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: contact_manage
+  params:
+    email:
+      type: string
+      required: false
+      description: Filter by email
+    phone_number:
+      type: string
+      required: false
+      description: Filter by phone number
+    name:
+      type: string
+      required: false
+      description: Filter by name (partial match)
+  handler:
+    service: Captain::Capabilities::Contacts::Search
+
+- id: get_contact
+  title: Get Contact
+  description_key: captain.capabilities.get_contact
+  domain: contacts
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: contact_manage
+  params:
+    contact_id:
+      type: integer
+      required: true
+      description: Contact ID
+  handler:
+    service: Captain::Capabilities::Contacts::Get
+
+# --- Articles (read) ---
+- id: search_articles
+  title: Search Articles
+  description_key: captain.capabilities.search_articles
+  domain: help_center
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: agent
+  params:
+    query:
+      type: string
+      required: true
+      description: Search query for help center articles
+  handler:
+    service: Captain::Capabilities::Articles::Search
+
+- id: get_article
+  title: Get Article
+  description_key: captain.capabilities.get_article
+  domain: help_center
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  permission: agent
+  params:
+    article_id:
+      type: integer
+      required: true
+      description: Article ID
+  handler:
+    service: Captain::Capabilities::Articles::Get
+
+# --- Labels ---
+- id: list_labels
+  title: List Labels
+  description_key: captain.capabilities.list_labels
+  domain: labels
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/labels
+  permission: administrator
+  params:
+    search:
+      type: string
+      required: false
+      description: Optional filter by label title
+  handler:
+    service: Captain::Capabilities::Labels::List
+
+- id: create_label
+  title: Create Label
+  description_key: captain.capabilities.create_label
+  domain: labels
+  exposure: [copilot, webmcp]
+  webmcp_mode: declarative
+  route: /app/accounts/:accountId/settings/labels
+  permission: administrator
+  params:
+    title:
+      type: string
+      required: true
+      description: Label title
+    description:
+      type: string
+      required: false
+      description: Label description
+    color:
+      type: string
+      required: false
+      description: Label color hex code
+    show_on_sidebar:
+      type: boolean
+      required: false
+      description: Whether to show on sidebar
+  handler:
+    service: Captain::Capabilities::Labels::Create
+
+- id: update_label
+  title: Update Label
+  description_key: captain.capabilities.update_label
+  domain: labels
+  exposure: [copilot, webmcp]
+  webmcp_mode: declarative
+  route: /app/accounts/:accountId/settings/labels
+  permission: administrator
+  params:
+    label_id:
+      type: integer
+      required: true
+      description: Label ID
+    title:
+      type: string
+      required: false
+      description: Label title
+    description:
+      type: string
+      required: false
+      description: Label description
+    color:
+      type: string
+      required: false
+      description: Label color hex code
+    show_on_sidebar:
+      type: boolean
+      required: false
+      description: Whether to show on sidebar
+  handler:
+    service: Captain::Capabilities::Labels::Update
+
+- id: delete_label
+  title: Delete Label
+  description_key: captain.capabilities.delete_label
+  domain: labels
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/labels
+  permission: administrator
+  params:
+    label_id:
+      type: integer
+      required: true
+      description: Label ID
+  handler:
+    service: Captain::Capabilities::Labels::Delete
+
+# --- Canned responses ---
+- id: list_canned_responses
+  title: List Canned Responses
+  description_key: captain.capabilities.list_canned_responses
+  domain: canned_responses
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/canned-response
+  permission: administrator
+  params:
+    search:
+      type: string
+      required: false
+      description: Optional filter by short code
+  handler:
+    service: Captain::Capabilities::CannedResponses::List
+
+- id: create_canned_response
+  title: Create Canned Response
+  description_key: captain.capabilities.create_canned_response
+  domain: canned_responses
+  exposure: [copilot, webmcp]
+  webmcp_mode: declarative
+  route: /app/accounts/:accountId/settings/canned-response
+  permission: administrator
+  params:
+    short_code:
+      type: string
+      required: true
+      description: Short code for the canned response
+    content:
+      type: string
+      required: true
+      description: Canned response content
+  handler:
+    service: Captain::Capabilities::CannedResponses::Create
+
+- id: update_canned_response
+  title: Update Canned Response
+  description_key: captain.capabilities.update_canned_response
+  domain: canned_responses
+  exposure: [copilot, webmcp]
+  webmcp_mode: declarative
+  route: /app/accounts/:accountId/settings/canned-response
+  permission: administrator
+  params:
+    canned_response_id:
+      type: integer
+      required: true
+      description: Canned response ID
+    short_code:
+      type: string
+      required: false
+      description: Short code
+    content:
+      type: string
+      required: false
+      description: Content
+  handler:
+    service: Captain::Capabilities::CannedResponses::Update
+
+- id: delete_canned_response
+  title: Delete Canned Response
+  description_key: captain.capabilities.delete_canned_response
+  domain: canned_responses
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/canned-response
+  permission: administrator
+  params:
+    canned_response_id:
+      type: integer
+      required: true
+      description: Canned response ID
+  handler:
+    service: Captain::Capabilities::CannedResponses::Delete
+
+# --- Macros ---
+- id: list_macros
+  title: List Macros
+  description_key: captain.capabilities.list_macros
+  domain: macros
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/macros
+  permission: agent
+  params:
+    search:
+      type: string
+      required: false
+      description: Optional filter by macro name
+  handler:
+    service: Captain::Capabilities::Macros::List
+
+- id: get_macro
+  title: Get Macro
+  description_key: captain.capabilities.get_macro
+  domain: macros
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/macros
+  permission: agent
+  params:
+    macro_id:
+      type: integer
+      required: true
+      description: Macro ID
+  handler:
+    service: Captain::Capabilities::Macros::Get
+
+- id: create_macro
+  title: Create Macro
+  description_key: captain.capabilities.create_macro
+  domain: macros
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/macros
+  permission: agent
+  params:
+    name:
+      type: string
+      required: true
+      description: Macro name
+    actions_json:
+      type: string
+      required: true
+      description: Actions as JSON array
+    visibility:
+      type: string
+      required: false
+      description: global or personal
+  handler:
+    service: Captain::Capabilities::Macros::Create
+
+- id: update_macro
+  title: Update Macro
+  description_key: captain.capabilities.update_macro
+  domain: macros
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/macros
+  permission: agent
+  params:
+    macro_id:
+      type: integer
+      required: true
+      description: Macro ID
+    name:
+      type: string
+      required: false
+      description: Macro name
+    actions_json:
+      type: string
+      required: false
+      description: Actions as JSON array
+    visibility:
+      type: string
+      required: false
+      description: global or personal
+  handler:
+    service: Captain::Capabilities::Macros::Update
+
+- id: delete_macro
+  title: Delete Macro
+  description_key: captain.capabilities.delete_macro
+  domain: macros
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/macros
+  permission: agent
+  params:
+    macro_id:
+      type: integer
+      required: true
+      description: Macro ID
+  handler:
+    service: Captain::Capabilities::Macros::Delete
+
+# --- Inboxes ---
+- id: list_inboxes
+  title: List Inboxes
+  description_key: captain.capabilities.list_inboxes
+  domain: inboxes
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/inboxes
+  permission: administrator
+  params: {}
+  handler:
+    service: Captain::Capabilities::Inboxes::List
+
+- id: get_inbox
+  title: Get Inbox
+  description_key: captain.capabilities.get_inbox
+  domain: inboxes
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/inboxes
+  permission: administrator
+  params:
+    inbox_id:
+      type: integer
+      required: true
+      description: Inbox ID
+  handler:
+    service: Captain::Capabilities::Inboxes::Get
+
+- id: create_inbox
+  title: Create Inbox
+  description_key: captain.capabilities.create_inbox
+  domain: inboxes
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/inboxes
+  permission: administrator
+  copilot_execution: client
+  requires_page_context: true
+  params:
+    name:
+      type: string
+      required: true
+      description: Inbox name
+    channel_type:
+      type: string
+      required: true
+      description: Channel type (e.g. web_widget, email)
+  handler:
+    service: Captain::Capabilities::Inboxes::Create
+
+- id: delete_inbox
+  title: Delete Inbox
+  description_key: captain.capabilities.delete_inbox
+  domain: inboxes
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/inboxes
+  permission: administrator
+  params:
+    inbox_id:
+      type: integer
+      required: true
+      description: Inbox ID
+  handler:
+    service: Captain::Capabilities::Inboxes::Delete
+
+# --- Automation rules ---
+- id: list_automation_rules
+  title: List Automation Rules
+  description_key: captain.capabilities.list_automation_rules
+  domain: automation
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/automation
+  permission: administrator
+  params:
+    search:
+      type: string
+      required: false
+      description: Optional filter by rule name
+  handler:
+    service: Captain::Capabilities::AutomationRules::List
+
+- id: get_automation_rule
+  title: Get Automation Rule
+  description_key: captain.capabilities.get_automation_rule
+  domain: automation
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/automation
+  permission: administrator
+  params:
+    automation_rule_id:
+      type: integer
+      required: true
+      description: Automation rule ID
+  handler:
+    service: Captain::Capabilities::AutomationRules::Get
+
+- id: create_automation_rule
+  title: Create Automation Rule
+  description_key: captain.capabilities.create_automation_rule
+  domain: automation
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/automation
+  permission: administrator
+  params:
+    name:
+      type: string
+      required: true
+      description: Rule name
+    event_name:
+      type: string
+      required: true
+      description: Trigger event
+    conditions_json:
+      type: string
+      required: true
+      description: Conditions as JSON array
+    actions_json:
+      type: string
+      required: true
+      description: Actions as JSON array
+    description:
+      type: string
+      required: false
+      description: Rule description
+    active:
+      type: boolean
+      required: false
+      description: Whether the rule is active
+    execution_delay:
+      type: integer
+      required: false
+      description: Delay in minutes before actions run
+  handler:
+    service: Captain::Capabilities::AutomationRules::Create
+
+- id: update_automation_rule
+  title: Update Automation Rule
+  description_key: captain.capabilities.update_automation_rule
+  domain: automation
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/automation
+  permission: administrator
+  params:
+    automation_rule_id:
+      type: integer
+      required: true
+      description: Automation rule ID
+    name:
+      type: string
+      required: false
+      description: Rule name
+    event_name:
+      type: string
+      required: false
+      description: Trigger event
+    conditions_json:
+      type: string
+      required: false
+      description: Conditions as JSON array
+    actions_json:
+      type: string
+      required: false
+      description: Actions as JSON array
+    description:
+      type: string
+      required: false
+      description: Rule description
+    active:
+      type: boolean
+      required: false
+      description: Whether the rule is active
+    execution_delay:
+      type: integer
+      required: false
+      description: Delay in minutes
+  handler:
+    service: Captain::Capabilities::AutomationRules::Update
+
+- id: delete_automation_rule
+  title: Delete Automation Rule
+  description_key: captain.capabilities.delete_automation_rule
+  domain: automation
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/automation
+  permission: administrator
+  params:
+    automation_rule_id:
+      type: integer
+      required: true
+      description: Automation rule ID
+  handler:
+    service: Captain::Capabilities::AutomationRules::Delete
+
+# --- Campaigns ---
+- id: list_campaigns
+  title: List Campaigns
+  description_key: captain.capabilities.list_campaigns
+  domain: campaigns
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/campaigns
+  permission: administrator
+  params:
+    search:
+      type: string
+      required: false
+      description: Optional filter by title
+  handler:
+    service: Captain::Capabilities::Campaigns::List
+
+- id: get_campaign
+  title: Get Campaign
+  description_key: captain.capabilities.get_campaign
+  domain: campaigns
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/campaigns
+  permission: administrator
+  params:
+    campaign_id:
+      type: integer
+      required: true
+      description: Campaign display ID
+  handler:
+    service: Captain::Capabilities::Campaigns::Get
+
+- id: create_campaign
+  title: Create Campaign
+  description_key: captain.capabilities.create_campaign
+  domain: campaigns
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/campaigns
+  permission: administrator
+  params:
+    title:
+      type: string
+      required: true
+      description: Campaign title
+    message:
+      type: string
+      required: true
+      description: Campaign message
+    inbox_id:
+      type: integer
+      required: true
+      description: Inbox ID
+    description:
+      type: string
+      required: false
+      description: Campaign description
+    enabled:
+      type: boolean
+      required: false
+      description: Whether the campaign is enabled
+    trigger_rules_json:
+      type: string
+      required: false
+      description: Trigger rules as JSON object
+    audience_json:
+      type: string
+      required: false
+      description: Audience as JSON array
+  handler:
+    service: Captain::Capabilities::Campaigns::Create
+
+- id: update_campaign
+  title: Update Campaign
+  description_key: captain.capabilities.update_campaign
+  domain: campaigns
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/campaigns
+  permission: administrator
+  params:
+    campaign_id:
+      type: integer
+      required: true
+      description: Campaign display ID
+    title:
+      type: string
+      required: false
+      description: Campaign title
+    message:
+      type: string
+      required: false
+      description: Campaign message
+    enabled:
+      type: boolean
+      required: false
+      description: Whether enabled
+    trigger_rules_json:
+      type: string
+      required: false
+      description: Trigger rules as JSON object
+    audience_json:
+      type: string
+      required: false
+      description: Audience as JSON array
+  handler:
+    service: Captain::Capabilities::Campaigns::Update
+
+- id: delete_campaign
+  title: Delete Campaign
+  description_key: captain.capabilities.delete_campaign
+  domain: campaigns
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/campaigns
+  permission: administrator
+  params:
+    campaign_id:
+      type: integer
+      required: true
+      description: Campaign display ID
+  handler:
+    service: Captain::Capabilities::Campaigns::Delete
+
+# --- Account settings ---
+- id: get_account_settings
+  title: Get Account Settings
+  description_key: captain.capabilities.get_account_settings
+  domain: account
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/general
+  permission: administrator
+  params: {}
+  handler:
+    service: Captain::Capabilities::AccountSettings::Get
+
+- id: update_account_settings
+  title: Update Account Settings
+  description_key: captain.capabilities.update_account_settings
+  domain: account
+  exposure: [copilot, webmcp]
+  webmcp_mode: declarative
+  route: /app/accounts/:accountId/settings/general
+  permission: administrator
+  params:
+    name:
+      type: string
+      required: false
+      description: Account name
+    locale:
+      type: string
+      required: false
+      description: Account locale
+    domain:
+      type: string
+      required: false
+      description: Account domain
+    support_email:
+      type: string
+      required: false
+      description: Support email
+  handler:
+    service: Captain::Capabilities::AccountSettings::Update
+
+# --- Inbox working hours ---
+- id: update_inbox_working_hours
+  title: Update Inbox Working Hours
+  description_key: captain.capabilities.update_inbox_working_hours
+  domain: inboxes
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/inboxes
+  permission: administrator
+  params:
+    inbox_id:
+      type: integer
+      required: true
+      description: Inbox ID
+    working_hours_json:
+      type: string
+      required: true
+      description: Working hours as a JSON array of day schedules
+  handler:
+    service: Captain::Capabilities::Inboxes::UpdateWorkingHours
+
+# --- Integrations ---
+- id: list_integrations
+  title: List Integrations
+  description_key: captain.capabilities.list_integrations
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params: {}
+  handler:
+    service: Captain::Capabilities::Integrations::List
+
+- id: get_integration
+  title: Get Integration
+  description_key: captain.capabilities.get_integration
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    integration_id:
+      type: string
+      required: true
+      description: Integration ID (e.g. slack, openai, webhook)
+  handler:
+    service: Captain::Capabilities::Integrations::Get
+
+- id: connect_integration
+  title: Connect Integration
+  description_key: captain.capabilities.connect_integration
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  copilot_execution: client
+  requires_page_context: true
+  params:
+    integration_id:
+      type: string
+      required: true
+      description: OAuth integration ID (slack, linear, notion, shopify)
+    shop_domain:
+      type: string
+      required: false
+      description: Shopify shop domain (required for shopify)
+  handler:
+    service: Captain::Capabilities::Integrations::Connect
+
+- id: list_webhooks
+  title: List Webhooks
+  description_key: captain.capabilities.list_webhooks
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params: {}
+  handler:
+    service: Captain::Capabilities::Webhooks::List
+
+- id: create_webhook
+  title: Create Webhook
+  description_key: captain.capabilities.create_webhook
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    name:
+      type: string
+      required: true
+      description: Webhook name
+    url:
+      type: string
+      required: true
+      description: Webhook URL
+    subscriptions_json:
+      type: string
+      required: true
+      description: Subscribed events as a JSON array
+    inbox_id:
+      type: integer
+      required: false
+      description: Optional inbox ID for inbox-scoped webhooks
+  handler:
+    service: Captain::Capabilities::Webhooks::Create
+
+- id: update_webhook
+  title: Update Webhook
+  description_key: captain.capabilities.update_webhook
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    webhook_id:
+      type: integer
+      required: true
+      description: Webhook ID
+    name:
+      type: string
+      required: false
+      description: Webhook name
+    url:
+      type: string
+      required: false
+      description: Webhook URL
+    subscriptions_json:
+      type: string
+      required: false
+      description: Subscribed events as a JSON array
+    inbox_id:
+      type: integer
+      required: false
+      description: Optional inbox ID
+  handler:
+    service: Captain::Capabilities::Webhooks::Update
+
+- id: delete_webhook
+  title: Delete Webhook
+  description_key: captain.capabilities.delete_webhook
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    webhook_id:
+      type: integer
+      required: true
+      description: Webhook ID
+  handler:
+    service: Captain::Capabilities::Webhooks::Delete
+
+- id: list_integration_hooks
+  title: List Integration Hooks
+  description_key: captain.capabilities.list_integration_hooks
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    app_id:
+      type: string
+      required: false
+      description: Optional integration app ID filter
+  handler:
+    service: Captain::Capabilities::IntegrationHooks::List
+
+- id: create_integration_hook
+  title: Create Integration Hook
+  description_key: captain.capabilities.create_integration_hook
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    app_id:
+      type: string
+      required: true
+      description: Integration app ID (e.g. openai, dialogflow)
+    settings_json:
+      type: string
+      required: false
+      description: Integration settings as a JSON object
+    inbox_id:
+      type: integer
+      required: false
+      description: Inbox ID for inbox-scoped integrations
+    status:
+      type: string
+      required: false
+      description: Hook status (enabled or disabled)
+  handler:
+    service: Captain::Capabilities::IntegrationHooks::Create
+
+- id: update_integration_hook
+  title: Update Integration Hook
+  description_key: captain.capabilities.update_integration_hook
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    hook_id:
+      type: integer
+      required: true
+      description: Integration hook ID
+    status:
+      type: string
+      required: false
+      description: Hook status (enabled or disabled)
+    settings_json:
+      type: string
+      required: false
+      description: Integration settings as a JSON object
+  handler:
+    service: Captain::Capabilities::IntegrationHooks::Update
+
+- id: delete_integration_hook
+  title: Delete Integration Hook
+  description_key: captain.capabilities.delete_integration_hook
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    hook_id:
+      type: integer
+      required: true
+      description: Integration hook ID
+  handler:
+    service: Captain::Capabilities::IntegrationHooks::Delete
+
+- id: list_dashboard_apps
+  title: List Dashboard Apps
+  description_key: captain.capabilities.list_dashboard_apps
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params: {}
+  handler:
+    service: Captain::Capabilities::DashboardApps::List
+
+- id: create_dashboard_app
+  title: Create Dashboard App
+  description_key: captain.capabilities.create_dashboard_app
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    title:
+      type: string
+      required: true
+      description: Dashboard app title
+    content_json:
+      type: string
+      required: true
+      description: Dashboard app content as a JSON array of frame objects
+  handler:
+    service: Captain::Capabilities::DashboardApps::Create
+
+- id: update_dashboard_app
+  title: Update Dashboard App
+  description_key: captain.capabilities.update_dashboard_app
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    dashboard_app_id:
+      type: integer
+      required: true
+      description: Dashboard app ID
+    title:
+      type: string
+      required: false
+      description: Dashboard app title
+    content_json:
+      type: string
+      required: false
+      description: Dashboard app content as a JSON array
+  handler:
+    service: Captain::Capabilities::DashboardApps::Update
+
+- id: delete_dashboard_app
+  title: Delete Dashboard App
+  description_key: captain.capabilities.delete_dashboard_app
+  domain: integrations
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/integrations
+  permission: administrator
+  params:
+    dashboard_app_id:
+      type: integer
+      required: true
+      description: Dashboard app ID
+  handler:
+    service: Captain::Capabilities::DashboardApps::Delete
+
+# --- Billing ---
+- id: get_billing_summary
+  title: Get Billing Summary
+  description_key: captain.capabilities.get_billing_summary
+  domain: billing
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/billing
+  permission: administrator
+  params: {}
+  handler:
+    service: Captain::Capabilities::Billing::GetSummary
+
+- id: get_billing_limits
+  title: Get Billing Limits
+  description_key: captain.capabilities.get_billing_limits
+  domain: billing
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/billing
+  permission: administrator
+  params: {}
+  handler:
+    service: Captain::Capabilities::Billing::GetLimits
+
+- id: get_topup_options
+  title: Get Top-up Options
+  description_key: captain.capabilities.get_topup_options
+  domain: billing
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/billing
+  permission: administrator
+  params: {}
+  handler:
+    service: Captain::Capabilities::Billing::GetTopupOptions
+
+- id: open_billing_portal
+  title: Open Billing Portal
+  description_key: captain.capabilities.open_billing_portal
+  domain: billing
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/billing
+  permission: administrator
+  copilot_execution: client
+  requires_page_context: true
+  params: {}
+  handler:
+    service: Captain::Capabilities::Billing::OpenPortal
+
+- id: purchase_copilot_credits
+  title: Purchase Copilot Credits
+  description_key: captain.capabilities.purchase_copilot_credits
+  domain: billing
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/billing
+  permission: administrator
+  copilot_execution: client
+  requires_page_context: true
+  params:
+    credits:
+      type: integer
+      required: true
+      description: Number of credits to purchase
+  handler:
+    service: Captain::Capabilities::Billing::PurchaseCredits
+
+- id: select_billing_currency
+  title: Select Billing Currency
+  description_key: captain.capabilities.select_billing_currency
+  domain: billing
+  exposure: [copilot, webmcp]
+  webmcp_mode: imperative
+  route: /app/accounts/:accountId/settings/billing
+  permission: administrator
+  copilot_execution: client
+  requires_page_context: true
+  params:
+    currency:
+      type: string
+      required: true
+      description: Billing currency code (e.g. usd, eur)
+  handler:
+    service: Captain::Capabilities::Billing::SelectCurrency

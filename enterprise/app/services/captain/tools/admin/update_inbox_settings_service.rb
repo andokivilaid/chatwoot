@@ -9,8 +9,7 @@ class Captain::Tools::Admin::UpdateInboxSettingsService < Captain::Tools::Admin:
     'update_inbox_settings'
   end
 
-  description 'Update inbox settings such as greeting, CSAT, timezone, and auto-assignment. Requires user confirmation.'
-  param :confirmed, type: :boolean, desc: 'Must be true after the user explicitly confirms the change', required: true
+  description 'Update inbox settings such as greeting, CSAT, timezone, and auto-assignment.'
   param :inbox_id, type: :integer, desc: 'ID of the inbox to update', required: true
   param :name, type: :string, desc: 'Inbox name'
   param :greeting_enabled, type: :boolean, desc: 'Whether the greeting message is enabled'
@@ -26,10 +25,7 @@ class Captain::Tools::Admin::UpdateInboxSettingsService < Captain::Tools::Admin:
   param :business_name, type: :string, desc: 'Business name shown in the inbox'
   param :csat_config_json, type: :string, desc: 'CSAT configuration as a JSON object'
 
-  def execute(confirmed:, inbox_id:, csat_config_json: nil, **attributes)
-    confirmation_error = require_confirmation!(confirmed, inbox_id: inbox_id, csat_config_json: csat_config_json, **attributes)
-    return confirmation_error if confirmation_error.present?
-
+  def execute(inbox_id:, csat_config_json: nil, **attributes)
     inbox = find_inbox(inbox_id)
     return 'Inbox not found' if inbox.blank?
 

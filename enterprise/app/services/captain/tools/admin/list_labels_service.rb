@@ -7,11 +7,6 @@ class Captain::Tools::Admin::ListLabelsService < Captain::Tools::Admin::BaseTool
   param :search, type: :string, desc: 'Optional filter by label title (partial match)'
 
   def execute(search: nil)
-    labels = account.labels
-    labels = labels.where('title ILIKE ?', "%#{search.downcase}%") if search.present?
-
-    return 'No labels found' if labels.none?
-
-    labels.limit(100).map { |label| format_label(label) }.join("\n---\n")
+    capability_service(Captain::Capabilities::Labels::List, search: search)
   end
 end

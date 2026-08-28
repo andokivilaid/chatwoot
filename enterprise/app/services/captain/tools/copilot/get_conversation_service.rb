@@ -9,15 +9,18 @@ class Captain::Tools::Copilot::GetConversationService < Captain::Tools::BaseTool
   param :conversation_id, type: :integer, desc: 'ID of the conversation to retrieve', required: true
 
   def execute(conversation_id:)
-    conversation = accessible_conversation(account: @assistant.account, user: @user, display_id: conversation_id)
-    return 'Conversation not found' if conversation.blank?
-
-    conversation.to_llm_text(include_private_messages: true)
+    capability_service(Captain::Capabilities::Conversations::Get, conversation_id: conversation_id)
   end
 
   def active?
     user_has_permission('conversation_manage') ||
       user_has_permission('conversation_unassigned_manage') ||
       user_has_permission('conversation_participating_manage')
+  end
+
+  private
+
+  def capability_service(service_class, **params)
+    service_class.new(account: @assistant.account, user: @user).call(**params)
   end
 end

@@ -3,15 +3,11 @@ class Captain::Tools::Admin::UpdateInboxWorkingHoursService < Captain::Tools::Ad
     'update_inbox_working_hours'
   end
 
-  description 'Update inbox business hours schedule. Requires user confirmation.'
-  param :confirmed, type: :boolean, desc: 'Must be true after the user explicitly confirms the change', required: true
+  description 'Update inbox business hours schedule.'
   param :inbox_id, type: :integer, desc: 'ID of the inbox to update', required: true
   param :working_hours_json, type: :string, desc: 'Working hours as a JSON array of day schedules', required: true
 
-  def execute(confirmed:, inbox_id:, working_hours_json:)
-    confirmation_error = require_confirmation!(confirmed, inbox_id: inbox_id, working_hours_json: working_hours_json)
-    return confirmation_error if confirmation_error.present?
-
+  def execute(inbox_id:, working_hours_json:)
     inbox = find_inbox(inbox_id)
     return 'Inbox not found' if inbox.blank?
 

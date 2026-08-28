@@ -12,6 +12,9 @@ import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import wootConstants from 'dashboard/constants/globals';
 import { MESSAGE_TYPE } from 'shared/constants/messages';
 import CopilotPendingAdminActionsAPI from 'dashboard/api/captain/copilotPendingAdminActions';
+import CopilotMessagesAPI from 'dashboard/api/captain/copilotMessages';
+import { executeCapability } from 'dashboard/helper/capabilities';
+import { useI18n } from 'vue-i18n';
 
 defineProps({
   conversationInboxType: {
@@ -24,6 +27,7 @@ const store = useStore();
 const { uiSettings, updateUISettings } = useUISettings();
 const { isEnterprise } = useConfig();
 const { width: windowWidth } = useWindowSize();
+const { t } = useI18n();
 
 const currentUser = useMapGetter('getCurrentUser');
 const assistants = useMapGetter('captainAssistants/getRecords');
@@ -43,6 +47,8 @@ const isSmallScreen = computed(
 const selectedCopilotThreadId = ref(null);
 const pendingAdminActions = ref([]);
 const isProcessingAdminAction = ref(false);
+const isExecutingClientTools = ref(false);
+const processedClientToolRequestKeys = ref(new Set());
 const messages = computed(() =>
   store.getters['copilotMessages/getMessagesByThreadId'](
     selectedCopilotThreadId.value
@@ -108,6 +114,7 @@ const shouldShowCopilotPanel = computed(() => {
 const handleReset = () => {
   selectedCopilotThreadId.value = null;
   pendingAdminActions.value = [];
+  processedClientToolRequestKeys.value = new Set();
 };
 
 const fetchPendingAdminActions = async () => {
@@ -163,9 +170,79 @@ const rejectAdminAction = async actionId => {
   }
 };
 
+const buildClientToolRequestKey = (message, requests) =>
+  `${message.id}:${JSON.stringify(requests)}`;
+
+const processClientToolRequests = async () => {
+  if (
+    !selectedCopilotThreadId.value ||
+    isExecutingClientTools.value ||
+    isProcessingAdminAction.value
+  ) {
+    return;
+  }
+
+  const latestAssistantMessage = [...messages.value]
+    .reverse()
+    .find(message => message.message_type === 'assistant');
+
+  const clientToolRequests =
+    latestAssistantMessage?.message?.client_tool_requests;
+
+  if (!clientToolRequests?.length) return;
+
+  const requestKey = buildClientToolRequestKey(
+    latestAssistantMessage,
+    clientToolRequests
+  );
+
+  if (processedClientToolRequestKeys.value.has(requestKey)) return;
+
+  processedClientToolRequestKeys.value.add(requestKey);
+  isExecutingClientTools.value = true;
+
+  try {
+    const toolResults = await Promise.all(
+      clientToolRequests.map(async request => {
+        try {
+          const result = await executeCapability(
+            request.name,
+            request.arguments || {}
+          );
+          return {
+            name: request.name,
+            success: true,
+            result,
+          };
+        } catch (error) {
+          return {
+            name: request.name,
+            success: false,
+            error: error.message || t('CAPTAIN.WEBMCP.TOOL_FAILED'),
+          };
+        }
+      })
+    );
+
+    const { data } = await CopilotMessagesAPI.submitToolResults(
+      selectedCopilotThreadId.value,
+      { tool_results: toolResults }
+    );
+
+    if (data.copilot_message) {
+      store.dispatch('copilotMessages/upsert', data.copilot_message);
+    }
+  } catch (error) {
+    useAlert(error.message || t('CAPTAIN.WEBMCP.TOOL_FAILED'));
+  } finally {
+    isExecutingClientTools.value = false;
+  }
+};
+
 watch(() => currentChat.value?.id, handleReset);
 watch(selectedCopilotThreadId, fetchPendingAdminActions);
 watch(messages, fetchPendingAdminActions, { deep: true });
+watch(messages, processClientToolRequests, { deep: true });
 
 const sendMessage = async payload => {
   const message = typeof payload === 'string' ? payload : payload.message;
@@ -225,6 +302,7 @@ onMounted(() => {
       :can-suggest-reply="canSuggestReply"
       :pending-admin-actions="pendingAdminActions"
       :is-processing-admin-action="isProcessingAdminAction"
+      :is-executing-client-tools="isExecutingClientTools"
       @set-assistant="setAssistant"
       @send-message="sendMessage"
       @reset="handleReset"

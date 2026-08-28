@@ -1,24 +1,10 @@
 class Captain::Tools::Admin::Registry
-  READ_TOOLS = [
-    Captain::Tools::Admin::GetAccountSettingsService,
-    Captain::Tools::Admin::ListLabelsService,
-    Captain::Tools::Admin::ListCannedResponsesService,
-    Captain::Tools::Admin::ListMacrosService,
+  LEGACY_READ_TOOLS = [
     Captain::Tools::Admin::GetMacroService,
-    Captain::Tools::Admin::ListInboxesService,
-    Captain::Tools::Admin::GetInboxService,
-    Captain::Tools::Admin::ListAutomationRulesService,
     Captain::Tools::Admin::GetAutomationRuleService
   ].freeze
 
-  WRITE_TOOLS = [
-    Captain::Tools::Admin::UpdateAccountSettingsService,
-    Captain::Tools::Admin::CreateLabelService,
-    Captain::Tools::Admin::UpdateLabelService,
-    Captain::Tools::Admin::DeleteLabelService,
-    Captain::Tools::Admin::CreateCannedResponseService,
-    Captain::Tools::Admin::UpdateCannedResponseService,
-    Captain::Tools::Admin::DeleteCannedResponseService,
+  LEGACY_WRITE_TOOLS = [
     Captain::Tools::Admin::UpdateInboxSettingsService,
     Captain::Tools::Admin::UpdateInboxWorkingHoursService,
     Captain::Tools::Admin::CreateInboxService,
@@ -32,8 +18,31 @@ class Captain::Tools::Admin::Registry
   ].freeze
 
   def self.build(assistant, user:, copilot_thread: nil)
-    (READ_TOOLS + WRITE_TOOLS).map do |tool_class|
+    catalog_tools(assistant, user: user, copilot_thread: copilot_thread) +
+      legacy_tools(assistant, user: user, copilot_thread: copilot_thread)
+  end
+
+  def self.catalog_tools(assistant, user:, copilot_thread: nil)
+    Captain::Capabilities::Catalog.captain_capabilities_for(
+      exposure: :copilot,
+      account: assistant.account,
+      user: user
+    ).map do |capability|
+      Captain::Tools::CapabilityTool.build(
+        assistant,
+        capability: capability,
+        user: user,
+        copilot_thread: copilot_thread
+      )
+    end.select(&:active?)
+  end
+
+  def self.legacy_tools(assistant, user:, copilot_thread: nil)
+    (LEGACY_READ_TOOLS + LEGACY_WRITE_TOOLS).map do |tool_class|
       tool_class.new(assistant, user: user, copilot_thread: copilot_thread)
     end.select(&:active?)
   end
+
+  # Kept for CopilotPendingAdminAction executor compatibility with legacy write tools.
+  WRITE_TOOLS = LEGACY_WRITE_TOOLS.freeze
 end

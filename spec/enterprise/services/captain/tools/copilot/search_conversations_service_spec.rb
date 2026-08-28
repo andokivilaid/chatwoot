@@ -8,7 +8,7 @@ RSpec.describe Captain::Tools::Copilot::SearchConversationsService do
 
   describe '#name' do
     it 'returns the correct service name' do
-      expect(service.name).to eq('search_conversation')
+      expect(service.name).to eq('search_conversations')
     end
   end
 

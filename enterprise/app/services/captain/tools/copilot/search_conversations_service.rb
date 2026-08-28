@@ -2,7 +2,7 @@ class Captain::Tools::Copilot::SearchConversationsService < Captain::Tools::Base
   include Captain::Copilot::ConversationAccess
 
   def self.name
-    'search_conversation'
+    'search_conversations'
   end
   description 'Search conversations based on parameters'
 
@@ -12,17 +12,13 @@ class Captain::Tools::Copilot::SearchConversationsService < Captain::Tools::Base
   param :labels, type: :string, desc: 'Labels available'
 
   def execute(status: nil, contact_id: nil, priority: nil, labels: nil)
-    conversations = get_conversations(status, contact_id, priority, labels)
-
-    return 'No conversations found' unless conversations.exists?
-
-    total_count = conversations.count
-    conversations = conversations.limit(100)
-
-    <<~RESPONSE
-      #{total_count > 100 ? "Found #{total_count} conversations (showing first 100)" : "Total number of conversations: #{total_count}"}
-      #{conversations.map { |conversation| conversation.to_llm_text(include_contact_details: true, include_private_messages: true) }.join("\n---\n")}
-    RESPONSE
+    capability_service(
+      Captain::Capabilities::Conversations::Search,
+      status: status,
+      contact_id: contact_id,
+      priority: priority,
+      labels: labels
+    )
   end
 
   def active?
@@ -33,24 +29,7 @@ class Captain::Tools::Copilot::SearchConversationsService < Captain::Tools::Base
 
   private
 
-  def get_conversations(status, contact_id, priority, labels)
-    conversations = permissible_conversations
-    conversations = conversations.where(contact_id: contact_id) if contact_id.present?
-    conversations = conversations.where(status: status) if valid_status?(status)
-    conversations = conversations.where(priority: priority) if valid_priority?(priority)
-    conversations = conversations.tagged_with(labels, any: true) if labels.present?
-    conversations
-  end
-
-  def valid_status?(status)
-    status.present? && Conversation.statuses.key?(status)
-  end
-
-  def valid_priority?(priority)
-    priority.present? && Conversation.priorities.key?(priority)
-  end
-
-  def permissible_conversations
-    accessible_conversations(account: @assistant.account, user: @user)
+  def capability_service(service_class, **params)
+    service_class.new(account: @assistant.account, user: @user).call(**params)
   end
 end

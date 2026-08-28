@@ -94,6 +94,9 @@ Rails.application.routes.draw do
             resources :message_reports, only: [:create]
             resources :bulk_actions, only: [:create]
             resources :copilot_threads, only: [:index, :create] do
+              member do
+                post :tool_results
+              end
               resources :copilot_messages, only: [:index, :create]
               resources :copilot_pending_admin_actions, only: [:index] do
                 member do
@@ -102,6 +105,7 @@ Rails.application.routes.draw do
                 end
               end
             end
+            resources :capabilities, only: [:index]
             resources :custom_tools do
               post :test, on: :collection
             end

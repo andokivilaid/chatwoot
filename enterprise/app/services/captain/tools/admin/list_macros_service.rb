@@ -7,11 +7,6 @@ class Captain::Tools::Admin::ListMacrosService < Captain::Tools::Admin::BaseTool
   param :search, type: :string, desc: 'Optional filter by macro name (partial match)'
 
   def execute(search: nil)
-    macros = account.macros
-    macros = macros.where('name ILIKE ?', "%#{search}%") if search.present?
-
-    return 'No macros found' if macros.none?
-
-    macros.limit(100).map { |macro| format_macro(macro) }.join("\n---\n")
+    capability_service(Captain::Capabilities::Macros::List, search: search)
   end
 end

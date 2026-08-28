@@ -7,9 +7,6 @@ class Captain::Tools::Admin::GetAutomationRuleService < Captain::Tools::Admin::B
   param :automation_rule_id, type: :integer, desc: 'ID of the automation rule to retrieve', required: true
 
   def execute(automation_rule_id:)
-    rule = account.automation_rules.find_by(id: automation_rule_id)
-    return 'Automation rule not found' if rule.blank?
-
-    format_automation_rule(rule)
+    capability_service(Captain::Capabilities::AutomationRules::Get, automation_rule_id: automation_rule_id)
   end
 end

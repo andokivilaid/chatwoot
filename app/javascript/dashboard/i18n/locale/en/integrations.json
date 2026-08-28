@@ -607,6 +607,9 @@
         "CONFIRM": "Confirm",
         "REJECT": "Reject"
       },
+      "CLIENT_TOOL": {
+        "EXECUTING": "Running requested action..."
+      },
       "PROMPTS": {
         "SUMMARIZE": {
           "LABEL": "Summarize this conversation",
@@ -629,6 +632,19 @@
           "CONTENT": "Show me the list of top 10 contacts. Include name, email or phone number (if available), last seen time, tags (if any)."
         }
       }
+    },
+    "WEBMCP": {
+      "LABELS": {
+        "CREATE_DESCRIPTION": "Create a new conversation label with name, color, and description"
+      },
+      "CANNED": {
+        "CREATE_DESCRIPTION": "Create a canned response with a short code and message content"
+      },
+      "ATTRIBUTES": {
+        "CREATE_DESCRIPTION": "Create a custom attribute for contacts or conversations"
+      },
+      "TOOL_FAILED": "Unable to complete the requested action",
+      "TOOL_EXECUTING": "Running requested action..."
     },
     "PLAYGROUND": {
       "USER": "You",

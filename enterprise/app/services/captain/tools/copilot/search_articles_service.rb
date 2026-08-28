@@ -8,15 +8,12 @@ class Captain::Tools::Copilot::SearchArticlesService < Captain::Tools::BaseTool
   param :status, type: :string, desc: 'Filter articles by status - MUST BE ONE OF: draft, published, archived', required: false
 
   def execute(query: nil, category_id: nil, status: nil)
-    articles = fetch_articles(query: query, category_id: category_id, status: status)
-    return 'No articles found' unless articles.exists?
-
-    total_count = articles.count
-    articles = articles.limit(100)
-    <<~RESPONSE
-      #{total_count > 100 ? "Found #{total_count} articles (showing first 100)" : "Total number of articles: #{total_count}"}
-      #{articles.map(&:to_llm_text).join("\n---\n")}
-    RESPONSE
+    capability_service(
+      Captain::Capabilities::Articles::Search,
+      query: query,
+      category_id: category_id,
+      status: status
+    )
   end
 
   def active?
@@ -25,11 +22,7 @@ class Captain::Tools::Copilot::SearchArticlesService < Captain::Tools::BaseTool
 
   private
 
-  def fetch_articles(query:, category_id:, status:)
-    articles = Article.where(account_id: @assistant.account_id)
-    articles = articles.where('title ILIKE :query OR content ILIKE :query', query: "%#{query}%") if query.present?
-    articles = articles.where(category_id: category_id) if category_id.present?
-    articles = articles.where(status: status) if status.present?
-    articles
+  def capability_service(service_class, **params)
+    service_class.new(account: @assistant.account, user: @user).call(**params)
   end
 end

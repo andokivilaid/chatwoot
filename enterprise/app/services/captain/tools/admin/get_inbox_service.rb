@@ -7,9 +7,6 @@ class Captain::Tools::Admin::GetInboxService < Captain::Tools::Admin::BaseTool
   param :inbox_id, type: :integer, desc: 'ID of the inbox to retrieve', required: true
 
   def execute(inbox_id:)
-    inbox = account.inboxes.find_by(id: inbox_id)
-    return 'Inbox not found' if inbox.blank?
-
-    format_inbox(inbox)
+    capability_service(Captain::Capabilities::Inboxes::Get, inbox_id: inbox_id)
   end
 end

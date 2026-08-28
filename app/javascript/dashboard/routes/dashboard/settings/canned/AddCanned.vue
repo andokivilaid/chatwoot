@@ -1,11 +1,18 @@
 <script>
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength } from '@vuelidate/validators';
 import { useAlert } from 'dashboard/composables';
+import {
+  fetchCapabilities,
+  getCapabilityById,
+} from 'dashboard/helper/capabilities';
 
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import Modal from '../../../../components/Modal.vue';
 import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
+import WebMcpForm from 'dashboard/components-next/webmcp/WebMcpForm.vue';
 
 export default {
   name: 'AddCanned',
@@ -13,6 +20,7 @@ export default {
     NextButton,
     Modal,
     WootMessageEditor,
+    WebMcpForm,
   },
   props: {
     responseContent: {
@@ -25,7 +33,15 @@ export default {
     },
   },
   setup() {
-    return { v$: useVuelidate() };
+    const route = useRoute();
+    const capability = ref(null);
+
+    onMounted(async () => {
+      await fetchCapabilities(route.params.accountId);
+      capability.value = getCapabilityById('create_canned_response');
+    });
+
+    return { v$: useVuelidate(), capability };
   },
   data() {
     return {
@@ -54,28 +70,33 @@ export default {
       this.v$.shortCode.$reset();
       this.v$.content.$reset();
     },
-    addCannedResponse() {
-      // Show loading on button
+    buildCannedPayload(formData = {}) {
+      return {
+        short_code: formData.short_code || this.shortCode,
+        content: formData.content || this.content,
+      };
+    },
+    async executeCreateCanned(formData = {}) {
       this.addCanned.showLoading = true;
-      // Make API Calls
-      this.$store
-        .dispatch('createCannedResponse', {
-          short_code: this.shortCode,
-          content: this.content,
-        })
-        .then(() => {
-          // Reset Form, Show success message
-          this.addCanned.showLoading = false;
-          useAlert(this.$t('CANNED_MGMT.ADD.API.SUCCESS_MESSAGE'));
-          this.resetForm();
-          this.onClose();
-        })
-        .catch(error => {
-          this.addCanned.showLoading = false;
-          const errorMessage =
-            error?.message || this.$t('CANNED_MGMT.ADD.API.ERROR_MESSAGE');
-          useAlert(errorMessage);
-        });
+
+      try {
+        const payload = this.buildCannedPayload(formData);
+        await this.$store.dispatch('createCannedResponse', payload);
+        this.addCanned.showLoading = false;
+        useAlert(this.$t('CANNED_MGMT.ADD.API.SUCCESS_MESSAGE'));
+        this.resetForm();
+        this.onClose();
+        return { success: true, cannedResponse: payload };
+      } catch (error) {
+        this.addCanned.showLoading = false;
+        const errorMessage =
+          error?.message || this.$t('CANNED_MGMT.ADD.API.ERROR_MESSAGE');
+        useAlert(errorMessage);
+        throw error;
+      }
+    },
+    addCannedResponse() {
+      this.executeCreateCanned();
     },
   },
 };
@@ -88,13 +109,19 @@ export default {
         :header-title="$t('CANNED_MGMT.ADD.TITLE')"
         :header-content="$t('CANNED_MGMT.ADD.DESC')"
       />
-      <form class="flex flex-col w-full" @submit.prevent="addCannedResponse()">
+      <WebMcpForm
+        :capability="capability"
+        :execute-fn="executeCreateCanned"
+        class="flex flex-col w-full"
+        @submit="addCannedResponse"
+      >
         <div class="w-full">
           <label :class="{ error: v$.shortCode.$error }">
             {{ $t('CANNED_MGMT.ADD.FORM.SHORT_CODE.LABEL') }}
             <input
               v-model="shortCode"
               type="text"
+              data-webmcp-param="short_code"
               :placeholder="$t('CANNED_MGMT.ADD.FORM.SHORT_CODE.PLACEHOLDER')"
               @blur="v$.shortCode.$touch"
             />
@@ -117,6 +144,7 @@ export default {
               @blur="v$.content.$touch"
             />
           </div>
+          <input type="hidden" :value="content" data-webmcp-param="content" />
         </div>
         <div class="flex flex-row justify-end w-full gap-2 px-0 py-2">
           <NextButton
@@ -137,7 +165,7 @@ export default {
             :is-loading="addCanned.showLoading"
           />
         </div>
-      </form>
+      </WebMcpForm>
     </div>
   </Modal>
 </template>

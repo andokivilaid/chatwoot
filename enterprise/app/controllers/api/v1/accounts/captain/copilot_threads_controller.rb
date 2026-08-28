@@ -30,6 +30,24 @@ class Api::V1::Accounts::Captain::CopilotThreadsController < Api::V1::Accounts::
     end
   end
 
+  def tool_results
+    @copilot_thread = Current.account.copilot_threads.find_by!(id: params[:id], user: Current.user)
+
+    if @copilot_thread.pending_client_tool_call.blank?
+      return render json: { error: 'No pending client tool call' }, status: :unprocessable_entity
+    end
+
+    Captain::Copilot::ToolResultsJob.perform_later(
+      assistant: @copilot_thread.assistant,
+      user_id: Current.user.id,
+      copilot_thread_id: @copilot_thread.id,
+      conversation_id: params[:conversation_id],
+      tool_results: tool_results_params
+    )
+
+    head :accepted
+  end
+
   private
 
   def build_copilot_response(copilot_message)
@@ -83,6 +101,12 @@ class Api::V1::Accounts::Captain::CopilotThreadsController < Api::V1::Accounts::
 
   def copilot_thread_params
     params.permit(:message, :assistant_id, :conversation_id, :request_type)
+  end
+
+  def tool_results_params
+    params.require(:tool_results).map do |tool_result|
+      tool_result.permit(:name, :result, :error).to_h.symbolize_keys
+    end
   end
 
   def permitted_params

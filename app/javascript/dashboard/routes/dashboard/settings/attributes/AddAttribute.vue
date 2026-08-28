@@ -1,4 +1,6 @@
 <script>
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength } from '@vuelidate/validators';
 import { mapGetters } from 'vuex';
@@ -6,14 +8,20 @@ import { useAlert } from 'dashboard/composables';
 import { convertToAttributeSlug } from 'dashboard/helper/commons.js';
 import { normalizeRegexPattern } from 'shared/helpers/Validators';
 import { ATTRIBUTE_MODELS, ATTRIBUTE_TYPES } from './constants';
+import {
+  fetchCapabilities,
+  getCapabilityById,
+} from 'dashboard/helper/capabilities';
 
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import TagInput from 'dashboard/components-next/taginput/TagInput.vue';
+import WebMcpForm from 'dashboard/components-next/webmcp/WebMcpForm.vue';
 
 export default {
   components: {
     NextButton,
     TagInput,
+    WebMcpForm,
   },
   props: {
     onClose: {
@@ -28,7 +36,15 @@ export default {
     },
   },
   setup() {
-    return { v$: useVuelidate() };
+    const route = useRoute();
+    const capability = ref(null);
+
+    onMounted(async () => {
+      await fetchCapabilities(route.params.accountId);
+      capability.value = getCapabilityById('create_custom_attribute');
+    });
+
+    return { v$: useVuelidate(), capability };
   },
   data() {
     return {
@@ -126,35 +142,60 @@ export default {
     toggleRegexEnabled() {
       this.regexEnabled = !this.regexEnabled;
     },
-    async addAttributes() {
+    buildAttributePayload(formData = {}) {
+      const regexEnabled =
+        formData.regex_enabled === undefined
+          ? this.regexEnabled
+          : ['true', 'on', '1', true].includes(formData.regex_enabled);
+
+      return {
+        attribute_display_name:
+          formData.attribute_display_name || this.displayName,
+        attribute_description:
+          formData.attribute_description || this.description,
+        attribute_model: Number(
+          formData.attribute_model ?? this.attributeModel
+        ),
+        attribute_display_type: Number(
+          formData.attribute_display_type ?? this.attributeType
+        ),
+        attribute_key: formData.attribute_key || this.attributeKey,
+        attribute_values: this.attributeListValues,
+        regex_pattern: regexEnabled
+          ? normalizeRegexPattern(formData.regex_pattern || this.regexPattern)
+          : null,
+        regex_cue: regexEnabled ? formData.regex_cue || this.regexCue : null,
+      };
+    },
+    async executeCreateAttribute(formData = {}) {
       this.v$.$touch();
-      if (this.v$.$invalid) {
-        return;
+      if (this.v$.$invalid || this.isTagInputEmpty) {
+        this.alertMessage = this.$t('ATTRIBUTES_MGMT.ADD.FORM.NAME.ERROR');
+        useAlert(this.alertMessage);
+        throw new Error(this.alertMessage);
       }
+
       if (!this.regexEnabled) {
         this.regexPattern = null;
         this.regexCue = null;
       }
+
       try {
-        await this.$store.dispatch('attributes/create', {
-          attribute_display_name: this.displayName,
-          attribute_description: this.description,
-          attribute_model: this.attributeModel,
-          attribute_display_type: this.attributeType,
-          attribute_key: this.attributeKey,
-          attribute_values: this.attributeListValues,
-          regex_pattern: normalizeRegexPattern(this.regexPattern),
-          regex_cue: this.regexCue,
-        });
+        const payload = this.buildAttributePayload(formData);
+        await this.$store.dispatch('attributes/create', payload);
         this.alertMessage = this.$t('ATTRIBUTES_MGMT.ADD.API.SUCCESS_MESSAGE');
         this.onClose();
+        return { success: true, attribute: payload };
       } catch (error) {
         const errorMessage = error?.message;
         this.alertMessage =
           errorMessage || this.$t('ATTRIBUTES_MGMT.ADD.API.ERROR_MESSAGE');
-      } finally {
         useAlert(this.alertMessage);
+        throw error;
       }
+    },
+    async addAttributes() {
+      await this.executeCreateAttribute();
     },
   },
 };
@@ -165,11 +206,19 @@ export default {
     <div class="flex flex-col h-auto overflow-auto">
       <woot-modal-header :header-title="$t('ATTRIBUTES_MGMT.ADD.TITLE')" />
 
-      <form class="flex w-full" @submit.prevent="addAttributes">
+      <WebMcpForm
+        :capability="capability"
+        :execute-fn="executeCreateAttribute"
+        class="flex w-full"
+        @submit="addAttributes"
+      >
         <div class="w-full">
           <label :class="{ error: v$.attributeModel.$error }">
             {{ $t('ATTRIBUTES_MGMT.ADD.FORM.MODEL.LABEL') }}
-            <select v-model="attributeModel">
+            <select
+              v-model="attributeModel"
+              data-webmcp-param="attribute_model"
+            >
               <option v-for="model in models" :key="model.id" :value="model.id">
                 {{ model.option }}
               </option>
@@ -189,6 +238,7 @@ export default {
                 : ''
             "
             :placeholder="$t('ATTRIBUTES_MGMT.ADD.FORM.NAME.PLACEHOLDER')"
+            data-webmcp-param="attribute_display_name"
             @update:model-value="onDisplayNameChange"
             @blur="v$.displayName.$touch"
           />
@@ -199,6 +249,7 @@ export default {
             :class="{ error: v$.attributeKey.$error }"
             :error="v$.attributeKey.$error ? keyErrorMessage : ''"
             :placeholder="$t('ATTRIBUTES_MGMT.ADD.FORM.KEY.PLACEHOLDER')"
+            data-webmcp-param="attribute_key"
             @blur="v$.attributeKey.$touch"
           />
           <label :class="{ error: v$.description.$error }">
@@ -207,6 +258,7 @@ export default {
               v-model="description"
               rows="3"
               type="text"
+              data-webmcp-param="attribute_description"
               :placeholder="$t('ATTRIBUTES_MGMT.ADD.FORM.DESC.PLACEHOLDER')"
               @blur="v$.description.$touch"
             />
@@ -216,7 +268,10 @@ export default {
           </label>
           <label :class="{ error: v$.attributeType.$error }">
             {{ $t('ATTRIBUTES_MGMT.ADD.FORM.TYPE.LABEL') }}
-            <select v-model="attributeType">
+            <select
+              v-model="attributeType"
+              data-webmcp-param="attribute_display_type"
+            >
               <option v-for="type in types" :key="type.id" :value="type.id">
                 {{ type.option }}
               </option>
@@ -253,6 +308,7 @@ export default {
             <input
               v-model="regexEnabled"
               type="checkbox"
+              data-webmcp-param="regex_enabled"
               @input="toggleRegexEnabled"
             />
             {{ $t('ATTRIBUTES_MGMT.ADD.FORM.ENABLE_REGEX.LABEL') }}
@@ -262,6 +318,7 @@ export default {
             v-model="regexPattern"
             :label="$t('ATTRIBUTES_MGMT.ADD.FORM.REGEX_PATTERN.LABEL')"
             type="text"
+            data-webmcp-param="regex_pattern"
             :placeholder="
               $t('ATTRIBUTES_MGMT.ADD.FORM.REGEX_PATTERN.PLACEHOLDER')
             "
@@ -271,6 +328,7 @@ export default {
             v-model="regexCue"
             :label="$t('ATTRIBUTES_MGMT.ADD.FORM.REGEX_CUE.LABEL')"
             type="text"
+            data-webmcp-param="regex_cue"
             :placeholder="$t('ATTRIBUTES_MGMT.ADD.FORM.REGEX_CUE.PLACEHOLDER')"
           />
           <div class="flex flex-row justify-end w-full gap-2 px-0 py-2">
@@ -288,7 +346,7 @@ export default {
             />
           </div>
         </div>
-      </form>
+      </WebMcpForm>
     </div>
   </woot-modal>
 </template>

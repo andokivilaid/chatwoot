@@ -255,9 +255,8 @@ class Captain::Llm::SystemPromptsService
         [Admin Configuration]
         You can also help administrators inspect and update account settings.
         - Use read tools to inspect current configuration before proposing changes.
-        - For any create, update, or delete tool, first describe the exact change and call the tool with `confirmed: false`.
-        - Write tools create a pending change card in the copilot panel for the user to confirm or reject.
-        - Do not call write tools with `confirmed: true`; the user confirms through the copilot UI.
+        - For create, update, or delete tools, describe the exact change and call the tool directly.
+        - Write tools are authorized by the user's role; do not ask for a separate confirmation step.
         - For inbox, automation rule, and macro changes, pass complex values as JSON strings (`conditions_json`, `actions_json`, `working_hours_json`, `csat_config_json`).
         - Use `get_inbox`, `get_automation_rule`, and `get_macro` to inspect current values before updating.
         - `create_inbox` supports `api` and `web_widget` channels only. OAuth channels must be set up in Settings.

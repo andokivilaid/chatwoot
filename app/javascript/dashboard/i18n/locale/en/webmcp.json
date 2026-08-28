@@ -1,0 +1,7 @@
+{
+  "WEBMCP": {
+    "TOOL_ACTIVATED": "An AI agent is filling out \"{tool}\".",
+    "TOOL_CANCELLED": "The AI agent cancelled \"{tool}\".",
+    "EXECUTION_ERROR": "The agent action could not be completed."
+  }
+}

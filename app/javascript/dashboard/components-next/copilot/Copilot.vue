@@ -44,6 +44,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isExecutingClientTools: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits([
@@ -99,11 +103,13 @@ const groupedMessages = computed(() => {
 });
 
 const isLastMessageFromAssistant = computed(() => {
-  return (
-    groupedMessages.value[groupedMessages.value.length - 1].message_type ===
-    'assistant'
-  );
+  const lastMessage = groupedMessages.value[groupedMessages.value.length - 1];
+  return lastMessage?.message_type === 'assistant';
 });
+
+const showLoader = computed(
+  () => !isLastMessageFromAssistant.value || props.isExecutingClientTools
+);
 
 const { updateUISettings } = useUISettings();
 
@@ -183,7 +189,7 @@ watch(
           @reject="emit('rejectAdminAction', $event)"
         />
 
-        <CopilotLoader v-if="!isLastMessageFromAssistant" />
+        <CopilotLoader v-if="showLoader" />
       </div>
       <CopilotEmptyState
         v-else

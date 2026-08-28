@@ -2,13 +2,14 @@
 #
 # Table name: copilot_threads
 #
-#  id           :bigint           not null, primary key
-#  title        :string           not null
-#  created_at   :datetime         not null
-#  updated_at   :datetime         not null
-#  account_id   :bigint           not null
-#  assistant_id :integer
-#  user_id      :bigint           not null
+#  id                       :bigint           not null, primary key
+#  pending_client_tool_call :jsonb
+#  title                    :string           not null
+#  created_at               :datetime         not null
+#  updated_at               :datetime         not null
+#  account_id               :bigint           not null
+#  assistant_id             :integer
+#  user_id                  :bigint           not null
 #
 # Indexes
 #
