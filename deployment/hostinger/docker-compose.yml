@@ -2,6 +2,9 @@ services:
   base: &base
     image: ${CHATWOOT_IMAGE:-chatwoot/chatwoot:v4.17.1}
     env_file: .env
+    # Prevent Hub sync from resetting self-hosted plan/features without a license.
+    extra_hosts:
+      - 'hub.2.chatwoot.com:127.0.0.1'
     volumes:
       - storage_data:/app/storage
 
