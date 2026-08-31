@@ -5,51 +5,43 @@ import Microsoft from './emailChannels/Microsoft.vue';
 import Google from './emailChannels/Google.vue';
 import ChannelSelector from 'dashboard/components/ChannelSelector.vue';
 import PageHeader from '../../SettingsSubPageHeader.vue';
+import { useChannelConfig } from 'dashboard/routes/dashboard/onboarding/inbox-setup/useChannelConfig';
 
-import { useStoreGetters } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
 
 const provider = ref('');
 
-const getters = useStoreGetters();
 const { t } = useI18n();
-
-const globalConfig = getters['globalConfig/get'];
-const isAChatwootInstance = getters['globalConfig/isAChatwootInstance'];
+const { getDisabledReasonKey } = useChannelConfig();
 
 const emailProviderList = computed(() => {
   return [
     {
       title: t('INBOX_MGMT.EMAIL_PROVIDERS.MICROSOFT.TITLE'),
       description: t('INBOX_MGMT.EMAIL_PROVIDERS.MICROSOFT.DESCRIPTION'),
-      isEnabled: !!globalConfig.value.azureAppId,
+      disabledReasonKey: getDisabledReasonKey('outlook'),
       key: 'microsoft',
       icon: 'i-woot-outlook',
     },
     {
       title: t('INBOX_MGMT.EMAIL_PROVIDERS.GOOGLE.TITLE'),
       description: t('INBOX_MGMT.EMAIL_PROVIDERS.GOOGLE.DESCRIPTION'),
-      isEnabled: !!window.chatwootConfig.googleOAuthClientId,
+      disabledReasonKey: getDisabledReasonKey('gmail'),
       key: 'google',
       icon: 'i-woot-gmail',
     },
     {
       title: t('INBOX_MGMT.EMAIL_PROVIDERS.OTHER_PROVIDERS.TITLE'),
       description: t('INBOX_MGMT.EMAIL_PROVIDERS.OTHER_PROVIDERS.DESCRIPTION'),
-      isEnabled: true,
+      disabledReasonKey: null,
       key: 'other_provider',
       icon: 'i-woot-mail',
     },
-  ].filter(providerConfig => {
-    if (isAChatwootInstance.value) {
-      return true;
-    }
-    return providerConfig.isEnabled;
-  });
+  ];
 });
 
 function onClick(emailProvider) {
-  if (emailProvider.isEnabled) {
+  if (!emailProvider.disabledReasonKey) {
     provider.value = emailProvider.key;
   }
 }
@@ -69,7 +61,12 @@ function onClick(emailProvider) {
         :title="emailProvider.title"
         :description="emailProvider.description"
         :icon="emailProvider.icon"
-        :disabled="!emailProvider.isEnabled"
+        :disabled="Boolean(emailProvider.disabledReasonKey)"
+        :disabled-message="
+          emailProvider.disabledReasonKey
+            ? $t(emailProvider.disabledReasonKey)
+            : ''
+        "
         @click="() => onClick(emailProvider)"
       />
     </div>

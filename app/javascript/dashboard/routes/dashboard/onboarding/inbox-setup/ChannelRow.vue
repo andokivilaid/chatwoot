@@ -13,6 +13,7 @@ defineEmits(['connect']);
 const { t } = useI18n();
 
 const connected = computed(() => Boolean(props.connectedInbox));
+const isUnavailable = computed(() => Boolean(props.channel.disabledReasonKey));
 // Prefer the real connected account's name over the detected handle — the user
 // may have connected a different account than the one we detected.
 const connectedName = computed(
@@ -20,6 +21,9 @@ const connectedName = computed(
     props.connectedInbox?.name ||
     props.channel.handle ||
     t(props.channel.labelKey)
+);
+const disabledMessage = computed(() =>
+  props.channel.disabledReasonKey ? t(props.channel.disabledReasonKey) : ''
 );
 </script>
 
@@ -33,7 +37,10 @@ const connectedName = computed(
         :class="{ grayscale: !connected }"
       />
     </div>
-    <span class="flex-1 min-w-0 truncate text-body-main text-n-slate-12">
+    <span
+      class="flex-1 min-w-0 truncate text-body-main"
+      :class="isUnavailable ? 'text-n-slate-11' : 'text-n-slate-12'"
+    >
       {{ t(channel.labelKey) }}
     </span>
     <div
@@ -46,6 +53,12 @@ const connectedName = computed(
         {{ t('ONBOARDING_INBOX_SETUP.CHANNELS.CONNECTED') }}
       </span>
     </div>
+    <span
+      v-else-if="isUnavailable"
+      class="flex-shrink-0 max-w-[14rem] text-end text-xs text-n-slate-11"
+    >
+      {{ disabledMessage }}
+    </span>
     <button
       v-else
       type="button"

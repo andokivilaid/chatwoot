@@ -51,7 +51,17 @@
     "PLACEHOLDER": "Enter duration"
   },
   "CHANNEL_SELECTOR": {
-    "COMING_SOON": "Coming Soon!"
+    "COMING_SOON": "Coming Soon!",
+    "DISABLED": {
+      "META_RESTRICTION": "Meta channel setup is temporarily restricted on this installation.",
+      "FACEBOOK_NOT_CONFIGURED": "Facebook is not configured. Ask your administrator to add Facebook app credentials in Super Admin settings.",
+      "INSTAGRAM_NOT_CONFIGURED": "Instagram is not configured. Ask your administrator to add Instagram app credentials in Super Admin settings.",
+      "WHATSAPP_NOT_CONFIGURED": "WhatsApp is not configured. Ask your administrator to add WhatsApp app credentials in Super Admin settings.",
+      "TIKTOK_NOT_CONFIGURED": "TikTok is not configured. Ask your administrator to add TikTok app credentials in Super Admin settings.",
+      "GMAIL_NOT_CONFIGURED": "Gmail is not configured. Ask your administrator to add Google OAuth credentials in Super Admin settings.",
+      "OUTLOOK_NOT_CONFIGURED": "Outlook is not configured. Ask your administrator to add Microsoft OAuth credentials in Super Admin settings.",
+      "FEATURE_NOT_ENABLED": "This channel is not enabled on your account. Contact your administrator to enable it."
+    }
   },
   "SLASH_COMMANDS": {
     "HEADING_1": "Heading 1",

@@ -20,7 +20,7 @@ const emit = defineEmits(['connected']);
 
 const { t } = useI18n();
 const { connectViaOAuth, connectWhatsapp } = useChannelConnect();
-const { isConfigured } = useChannelConfig();
+const { getDisabledReasonKey } = useChannelConfig();
 
 // Maps the dialog's display types to the OAuth client key the flow expects.
 // Types without an entry (manual-setup channels) are no-ops for now.
@@ -32,29 +32,29 @@ const OAUTH_PROVIDERS = {
 };
 
 // A card's availability — what the user can do with it right now:
-//   available  — usable now (configured, not deferred)
-//   setupLater — deferred to in-app setup (SMS/API/Voice/Email cards)
-// Channels whose installation OAuth credentials are missing are hidden entirely
-// (see channelCards), so they never reach this state.
+//   available      — usable now (configured, not deferred)
+//   setupLater     — deferred to in-app setup (SMS/API/Voice/Email cards)
+//   notConfigured  — visible but blocked until installation credentials exist
 // `connected` (a real inbox already backs it) is orthogonal and tracked
 // separately, since a connected channel can still be in any of these states.
-const channelAvailability = channel =>
-  channel.setupLater ? 'setupLater' : 'available';
+const channelAvailability = channel => {
+  if (channel.setupLater) return 'setupLater';
+  if (getDisabledReasonKey(channel.type)) return 'notConfigured';
+  return 'available';
+};
 
 const CARD_CLASS = {
   available: 'bg-n-solid-1 hover:outline-n-slate-6 cursor-pointer',
-  setupLater: 'bg-n-slate-2 cursor-not-allowed',
+  setupLater: 'bg-n-slate-2 cursor-not-allowed opacity-80',
+  notConfigured: 'bg-n-slate-2 cursor-not-allowed opacity-80',
 };
 
 // Decorate the catalog with per-render state so the template reads plain fields
-// rather than calling predicates for each card. Channels needing an absent
-// installation credential are dropped so they don't show at all; deferred
-// (setupLater) channels stay since they aren't a configuration problem.
+// rather than calling predicates for each card.
 const channelCards = computed(() =>
-  CHANNEL_LIST.filter(
-    channel => channel.setupLater || isConfigured(channel.type)
-  ).map(channel => {
+  CHANNEL_LIST.map(channel => {
     const connected = isChannelConnected(props.inboxes, channel.inbox);
+    const disabledReasonKey = getDisabledReasonKey(channel.type);
     // Website inboxes are only auto-created during onboarding — there is no
     // manual creation path, so an unconnected Website card defers rather than
     // offering a click that can't do anything.
@@ -62,7 +62,7 @@ const channelCards = computed(() =>
       channel.type === CHANNEL_TYPES.WEBSITE && !connected
         ? 'setupLater'
         : channelAvailability(channel);
-    return { ...channel, availability, connected };
+    return { ...channel, availability, connected, disabledReasonKey };
   })
 );
 
@@ -160,7 +160,7 @@ defineExpose({ open, close });
           :key="channel.type"
           type="button"
           :disabled="channel.availability !== 'available'"
-          class="flex items-center gap-3 p-3 rounded-xl outline outline-1 outline-n-weak shadow-[0px_1px_2px_0px_rgba(27,28,29,0.036)] transition-colors text-start"
+          class="relative flex items-center gap-3 p-3 rounded-xl outline outline-1 outline-n-weak shadow-[0px_1px_2px_0px_rgba(27,28,29,0.036)] transition-colors text-start overflow-hidden"
           :class="CARD_CLASS[channel.availability]"
           @click="onCardClick(channel)"
         >
@@ -200,6 +200,17 @@ defineExpose({ open, close });
             icon="i-lucide-chevron-right"
             class="size-5 text-n-slate-9"
           />
+          <div
+            v-if="
+              channel.availability === 'notConfigured' &&
+              channel.disabledReasonKey
+            "
+            class="absolute inset-0 flex items-center justify-center backdrop-blur-[2px] rounded-xl bg-gradient-to-br from-n-surface-1/90 via-n-surface-1/70 to-n-surface-1/95 cursor-not-allowed"
+          >
+            <span class="text-n-slate-12 font-medium text-xs text-center px-3">
+              {{ t(channel.disabledReasonKey) }}
+            </span>
+          </div>
         </button>
       </div>
       <p class="text-sm text-n-slate-11">

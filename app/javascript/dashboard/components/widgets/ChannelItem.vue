@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChannelSelector from '../ChannelSelector.vue';
+import { useChannelConfig } from 'dashboard/routes/dashboard/onboarding/inbox-setup/useChannelConfig';
 
 const props = defineProps({
   channel: {
@@ -15,67 +17,40 @@ const props = defineProps({
 
 const emit = defineEmits(['channelItemClick']);
 
-const hasFbConfigured = computed(() => {
-  return window.chatwootConfig?.fbAppId;
-});
+const { t } = useI18n();
+const { getDisabledReasonKey } = useChannelConfig();
 
-const hasInstagramConfigured = computed(() => {
-  return window.chatwootConfig?.instagramAppId;
-});
-
-const hasTiktokConfigured = computed(() => {
-  return window.chatwootConfig?.tiktokAppId;
-});
-
-const isActive = computed(() => {
-  const { key } = props.channel;
-  if (Object.keys(props.enabledFeatures).length === 0) {
-    return false;
-  }
-  if (key === 'website') {
-    return props.enabledFeatures.channel_website;
-  }
-  if (key === 'facebook') {
-    return props.enabledFeatures.channel_facebook && hasFbConfigured.value;
-  }
-  if (key === 'email') {
-    return props.enabledFeatures.channel_email;
-  }
-
-  if (key === 'instagram') {
-    return (
-      props.enabledFeatures.channel_instagram && hasInstagramConfigured.value
-    );
-  }
-
-  if (key === 'tiktok') {
-    return props.enabledFeatures.channel_tiktok && hasTiktokConfigured.value;
-  }
-
-  if (key === 'voice' || key === 'whatsapp_call') {
-    return props.enabledFeatures.channel_voice;
-  }
-
-  return [
-    'website',
-    'twilio',
-    'api',
-    'whatsapp',
-    'sms',
-    'telegram',
-    'line',
-    'instagram',
-    'tiktok',
-    'voice',
-  ].includes(key);
-});
+const SETTINGS_CREDENTIAL_CHANNELS = ['facebook', 'instagram', 'tiktok'];
+const FEATURE_NOT_ENABLED_KEY = 'CHANNEL_SELECTOR.DISABLED.FEATURE_NOT_ENABLED';
 
 const isComingSoon = computed(() => {
   const { key } = props.channel;
-  // Show "Coming Soon" only if the channel is marked as coming soon
-  // and the corresponding feature flag is not enabled yet.
-  return ['voice'].includes(key) && !isActive.value;
+  return key === 'voice' && !props.enabledFeatures.channel_voice;
 });
+
+const disabledReasonKey = computed(() => {
+  if (Object.keys(props.enabledFeatures).length === 0) {
+    return null;
+  }
+
+  if (isComingSoon.value) {
+    return null;
+  }
+
+  const reason = getDisabledReasonKey(props.channel.key, {
+    enabledFeatures: props.enabledFeatures,
+  });
+
+  if (!SETTINGS_CREDENTIAL_CHANNELS.includes(props.channel.key)) {
+    return reason === FEATURE_NOT_ENABLED_KEY ? reason : null;
+  }
+
+  return reason;
+});
+
+const isActive = computed(
+  () => !disabledReasonKey.value && !isComingSoon.value
+);
 
 const isBeta = computed(() => {
   return ['tiktok', 'voice', 'whatsapp_call'].includes(props.channel.key);
@@ -87,6 +62,10 @@ const hasVoiceBadge = computed(() => {
     !!props.enabledFeatures.channel_voice
   );
 });
+
+const disabledMessage = computed(() =>
+  disabledReasonKey.value ? t(disabledReasonKey.value) : ''
+);
 
 const onItemClick = () => {
   if (isActive.value) {
@@ -104,6 +83,7 @@ const onItemClick = () => {
     :is-beta="isBeta"
     :has-voice-badge="hasVoiceBadge"
     :disabled="!isActive"
+    :disabled-message="disabledMessage"
     @click="onItemClick"
   />
 </template>

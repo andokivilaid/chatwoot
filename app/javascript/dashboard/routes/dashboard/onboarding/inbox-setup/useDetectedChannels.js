@@ -10,7 +10,7 @@ import { findConnectedInbox } from './channelMatchers';
 import { useChannelConfig } from './useChannelConfig';
 
 // How many channel rows to show, whether detected or defaulted. DEFAULT_CHANNEL_TYPES
-// is config-gated like everything else, then sliced to this limit.
+// is sliced to this limit.
 const DISPLAYED_CHANNEL_LIMIT = 3;
 
 // Pull the handle/username out of a detected social URL, formatted per channel.
@@ -35,21 +35,28 @@ const extractHandle = ({ type, url }) => {
 export function useDetectedChannels() {
   const { currentAccount } = useAccount();
   const inboxes = useMapGetter('inboxes/getInboxes');
-  const { isConfigured } = useChannelConfig();
+  const { getDisabledReasonKey } = useChannelConfig();
 
   const brandSocials = computed(
     () => currentAccount.value?.custom_attributes?.brand_info?.socials || []
   );
 
+  const enrichChannel = channel => ({
+    ...channel,
+    disabledReasonKey: getDisabledReasonKey(channel.type),
+  });
+
   const connectedChannels = computed(() =>
     brandSocials.value
       .filter(social => SOCIAL_PLATFORMS[social.type] && social.url)
-      .map(social => ({
-        type: social.type,
-        handle: extractHandle(social),
-        labelKey: SOCIAL_PLATFORMS[social.type].labelKey,
-        inbox: { channel_type: SOCIAL_PLATFORMS[social.type].channelType },
-      }))
+      .map(social =>
+        enrichChannel({
+          type: social.type,
+          handle: extractHandle(social),
+          labelKey: SOCIAL_PLATFORMS[social.type].labelKey,
+          inbox: { channel_type: SOCIAL_PLATFORMS[social.type].channelType },
+        })
+      )
   );
 
   const detectedEmailChannel = computed(() => {
@@ -57,12 +64,12 @@ export function useDetectedChannels() {
     const provider = brandInfo?.email_provider;
     if (!EMAIL_PROVIDERS[provider]) return null;
 
-    return {
+    return enrichChannel({
       type: 'email',
       handle: brandInfo?.email || '',
       labelKey: EMAIL_PROVIDERS[provider].labelKey,
       inbox: { channel_type: 'Channel::Email', provider },
-    };
+    });
   });
 
   // The real inbox backing a channel, if one exists — returned (not just a
@@ -72,12 +79,13 @@ export function useDetectedChannels() {
 
   // A channel row built from a social type, with no detected handle — used for
   // the default suggestions when nothing was detected.
-  const toChannelRow = type => ({
-    type,
-    handle: '',
-    labelKey: SOCIAL_PLATFORMS[type].labelKey,
-    inbox: { channel_type: SOCIAL_PLATFORMS[type].channelType },
-  });
+  const toChannelRow = type =>
+    enrichChannel({
+      type,
+      handle: '',
+      labelKey: SOCIAL_PLATFORMS[type].labelKey,
+      inbox: { channel_type: SOCIAL_PLATFORMS[type].channelType },
+    });
 
   const detectedChannels = computed(() =>
     [detectedEmailChannel.value, ...connectedChannels.value]
@@ -85,15 +93,10 @@ export function useDetectedChannels() {
       // Email channels (including Gmail/Outlook OAuth) are disabled for this
       // phase; they will be enabled in a future PR.
       .filter(channel => channel.type !== 'email')
-      // Hide channels whose installation OAuth credentials are missing — their
-      // connect flow would only error.
-      .filter(channel => isConfigured(channel.type))
   );
 
   const defaultChannels = computed(() =>
-    DEFAULT_CHANNEL_TYPES.filter(isConfigured)
-      .slice(0, DISPLAYED_CHANNEL_LIMIT)
-      .map(toChannelRow)
+    DEFAULT_CHANNEL_TYPES.slice(0, DISPLAYED_CHANNEL_LIMIT).map(toChannelRow)
   );
 
   // Show the detected channels, or fall back to the default suggestions so the
@@ -110,13 +113,14 @@ export function useDetectedChannels() {
     const shownTypes = new Set(displayedChannels.value.map(c => c.type));
     return Object.entries(SOCIAL_PLATFORMS)
       .filter(([type]) => !shownTypes.has(type))
-      .filter(([type]) => isConfigured(type))
       .slice(0, 3)
-      .map(([type, { labelKey, channelType }]) => ({
-        type,
-        labelKey,
-        inbox: { channel_type: channelType },
-      }));
+      .map(([type, { labelKey, channelType }]) =>
+        enrichChannel({
+          type,
+          labelKey,
+          inbox: { channel_type: channelType },
+        })
+      );
   });
 
   const hasDetectedChannels = computed(() => detectedChannels.value.length > 0);

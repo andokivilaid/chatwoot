@@ -95,12 +95,14 @@ describe('useDetectedChannels', () => {
           handle: '+14155552671',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.WHATSAPP.TITLE',
           inbox: { channel_type: 'Channel::Whatsapp' },
+          disabledReasonKey: null,
         },
         {
           type: 'instagram',
           handle: '@acme',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.INSTAGRAM.TITLE',
           inbox: { channel_type: 'Channel::Instagram' },
+          disabledReasonKey: null,
         },
       ]);
     });
@@ -137,12 +139,14 @@ describe('useDetectedChannels', () => {
           handle: 'acme',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.LINE.TITLE',
           inbox: { channel_type: 'Channel::Line' },
+          disabledReasonKey: null,
         },
         {
           type: 'facebook',
           handle: '',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.FACEBOOK.TITLE',
           inbox: { channel_type: 'Channel::FacebookPage' },
+          disabledReasonKey: null,
         },
       ]);
     });
@@ -171,34 +175,40 @@ describe('useDetectedChannels', () => {
           handle: '',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.WHATSAPP.TITLE',
           inbox: { channel_type: 'Channel::Whatsapp' },
+          disabledReasonKey: null,
         },
         {
           type: 'facebook',
           handle: '',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.FACEBOOK.TITLE',
           inbox: { channel_type: 'Channel::FacebookPage' },
+          disabledReasonKey: null,
         },
         {
           type: 'instagram',
           handle: '',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.INSTAGRAM.TITLE',
           inbox: { channel_type: 'Channel::Instagram' },
+          disabledReasonKey: null,
         },
       ]);
     });
 
-    it('gates the default suggestions by installation config, keeping the list non-empty', () => {
+    it('keeps default suggestions visible when installation credentials are missing', () => {
       window.chatwootConfig = {}; // no OAuth credentials configured
       const { displayedChannels } = mountComposable({ brandInfo: undefined });
 
-      // Only the credential-free defaults survive (Telegram, LINE).
       expect(displayedChannels.value.map(channel => channel.type)).toEqual([
-        'telegram',
-        'line',
+        'whatsapp',
+        'facebook',
+        'instagram',
       ]);
+      expect(displayedChannels.value[0].disabledReasonKey).toBe(
+        'CHANNEL_SELECTOR.DISABLED.WHATSAPP_NOT_CONFIGURED'
+      );
     });
 
-    it('hides detected channels whose installation OAuth credentials are missing', () => {
+    it('keeps detected channels visible when installation OAuth credentials are missing', () => {
       window.chatwootConfig = {}; // nothing configured
       const { displayedChannels } = mountComposable({
         brandInfo: {
@@ -209,13 +219,17 @@ describe('useDetectedChannels', () => {
         },
       });
 
-      // Facebook needs fbAppId (absent → hidden); LINE needs no install credential.
       expect(displayedChannels.value.map(channel => channel.type)).toEqual([
+        'facebook',
         'line',
       ]);
+      expect(displayedChannels.value[0].disabledReasonKey).toBe(
+        'CHANNEL_SELECTOR.DISABLED.FACEBOOK_NOT_CONFIGURED'
+      );
+      expect(displayedChannels.value[1].disabledReasonKey).toBeNull();
     });
 
-    it('hides Meta channels on Chatwoot Cloud during the Meta restriction', () => {
+    it('keeps Meta channels visible on Chatwoot Cloud during the Meta restriction', () => {
       const { displayedChannels } = mountComposable({
         features: {
           channel_instagram: true,
@@ -234,11 +248,17 @@ describe('useDetectedChannels', () => {
       });
 
       expect(displayedChannels.value.map(channel => channel.type)).toEqual([
+        'whatsapp',
+        'facebook',
+        'instagram',
         'tiktok',
       ]);
+      expect(displayedChannels.value[0].disabledReasonKey).toBe(
+        'CHANNEL_SELECTOR.DISABLED.META_RESTRICTION'
+      );
     });
 
-    it('hides Instagram when disabled for the account', () => {
+    it('keeps Instagram visible when disabled for the account', () => {
       const { displayedChannels } = mountComposable({
         features: { channel_instagram: false },
         isOnChatwootCloud: true,
@@ -251,8 +271,12 @@ describe('useDetectedChannels', () => {
       });
 
       expect(displayedChannels.value.map(channel => channel.type)).toEqual([
+        'instagram',
         'tiktok',
       ]);
+      expect(displayedChannels.value[0].disabledReasonKey).toBe(
+        'CHANNEL_SELECTOR.DISABLED.FEATURE_NOT_ENABLED'
+      );
     });
   });
 
@@ -267,16 +291,19 @@ describe('useDetectedChannels', () => {
           type: 'line',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.LINE.TITLE',
           inbox: { channel_type: 'Channel::Line' },
+          disabledReasonKey: null,
         },
         {
           type: 'telegram',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.TELEGRAM.TITLE',
           inbox: { channel_type: 'Channel::Telegram' },
+          disabledReasonKey: null,
         },
         {
           type: 'tiktok',
           labelKey: 'INBOX_MGMT.ADD.AUTH.CHANNEL.TIKTOK.TITLE',
           inbox: { channel_type: 'Channel::Tiktok' },
+          disabledReasonKey: null,
         },
       ]);
     });
@@ -295,13 +322,18 @@ describe('useDetectedChannels', () => {
       ]);
     });
 
-    it('excludes channels whose installation OAuth credentials are missing', () => {
+    it('keeps channels visible when installation OAuth credentials are missing', () => {
       window.chatwootConfig = {}; // nothing configured
       const { remainingChannels } = mountComposable({ brandInfo: {} });
 
-      // The only configured channels (Telegram, LINE) are shown as default rows,
-      // and every other platform is gated out — so nothing remains for the footer.
-      expect(remainingChannels.value).toEqual([]);
+      expect(remainingChannels.value.map(channel => channel.type)).toEqual([
+        'line',
+        'telegram',
+        'tiktok',
+      ]);
+      expect(remainingChannels.value[2].disabledReasonKey).toBe(
+        'CHANNEL_SELECTOR.DISABLED.TIKTOK_NOT_CONFIGURED'
+      );
     });
   });
 
