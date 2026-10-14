@@ -24,3 +24,13 @@ ignore:
   # No Rails 7.1 patch for this Active Storage advisory; mitigated locally.
   # Remove once on Rails 7.2.3.1+.
   - CVE-2026-66066
+  # RubyLLM 1.x ReDoS advisories (tool-name normalization, think-tag parsing,
+  # Mistral capability matching) are reported on Ruby 3.1. We pin Ruby 3.4.4
+  # (Gemfile, .ruby-version, Docker image), where Regexp.linear_time? is true
+  # for all affected patterns thanks to regex memoization (Ruby 3.2+).
+  # Patched releases start at RubyLLM 2.0, which needs the ai-agents 0.13
+  # migration (upstream chatwoot#15983). Remove these when that lands here;
+  # reassess if the supported Ruby runtime changes.
+  - CVE-2026-67987
+  - CVE-2026-67989
+  - CVE-2026-67991
