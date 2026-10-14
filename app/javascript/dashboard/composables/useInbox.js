@@ -83,6 +83,10 @@ export const useInbox = (inboxId = null) => {
     return channelType.value === INBOX_TYPES.TELEGRAM;
   });
 
+  const isAMatrixChannel = computed(() => {
+    return channelType.value === INBOX_TYPES.MATRIX;
+  });
+
   const whatsAppAPIProvider = computed(() => {
     return inbox.value?.provider || '';
   });
@@ -149,6 +153,7 @@ export const useInbox = (inboxId = null) => {
     isAPIInbox,
     isASmsInbox,
     isATelegramChannel,
+    isAMatrixChannel,
     isATwilioChannel,
     isAWebWidgetInbox,
     isAWhatsAppChannel,

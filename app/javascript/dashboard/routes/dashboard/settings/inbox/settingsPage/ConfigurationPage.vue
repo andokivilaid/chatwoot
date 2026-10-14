@@ -252,6 +252,14 @@ export default {
       <woot-code :script="inbox.callback_webhook_url" lang="html" />
     </SettingsFieldSection>
   </div>
+  <div v-else-if="isAMatrixChannel">
+    <SettingsFieldSection
+      :label="$t('INBOX_MGMT.ADD.MATRIX_CHANNEL.REGISTRATION.TITLE')"
+      :help-text="$t('INBOX_MGMT.ADD.MATRIX_CHANNEL.REGISTRATION.SUBTITLE')"
+    >
+      <woot-code :script="inbox.matrix_registration_command" lang="yaml" />
+    </SettingsFieldSection>
+  </div>
   <div v-else-if="isAWebWidgetInbox">
     <div class="space-y-4">
       <SettingsToggleSection

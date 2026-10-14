@@ -68,6 +68,9 @@ export default {
     isATelegramChannel() {
       return this.channelType === INBOX_TYPES.TELEGRAM;
     },
+    isAMatrixChannel() {
+      return this.channelType === INBOX_TYPES.MATRIX;
+    },
     isATwilioSMSChannel() {
       const { medium: medium = '' } = this.inbox;
       return this.isATwilioChannel && medium === 'sms';
