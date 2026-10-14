@@ -2,10 +2,8 @@ class Captain::Capabilities::Articles::Search < Captain::Capabilities::Base
   def call(query: nil, category_id: nil, status: nil)
     authorize!(Article, :index?)
 
-    articles = Article.where(account_id: account.id)
+    articles = Article.where(account_id: account.id).where({ category_id: category_id, status: status }.compact_blank)
     articles = articles.where('title ILIKE :query OR content ILIKE :query', query: "%#{query}%") if query.present?
-    articles = articles.where(category_id: category_id) if category_id.present?
-    articles = articles.where(status: status) if status.present?
 
     return 'No articles found' unless articles.exists?
 

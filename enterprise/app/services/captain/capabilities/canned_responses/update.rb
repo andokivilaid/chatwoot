@@ -5,10 +5,7 @@ class Captain::Capabilities::CannedResponses::Update < Captain::Capabilities::Ba
     canned_response = account.canned_responses.find_by(id: canned_response_id)
     return 'Canned response not found' if canned_response.blank?
 
-    updates = {}.tap do |attrs|
-      attrs[:short_code] = short_code unless short_code.nil?
-      attrs[:content] = content unless content.nil?
-    end
+    updates = { short_code: short_code, content: content }.compact
     return 'No changes were provided' if updates.blank?
 
     canned_response.update!(updates)

@@ -5,11 +5,7 @@ class Captain::Capabilities::Macros::Update < Captain::Capabilities::Base
 
     authorize!(macro, :update?)
 
-    updates = {}.tap do |hash|
-      hash[:name] = name unless name.nil?
-      hash[:visibility] = visibility unless visibility.nil?
-      hash[:updated_by_id] = user.id
-    end
+    updates = { name: name, visibility: visibility }.compact.merge(updated_by_id: user.id)
 
     if actions_json.present?
       actions = parse_json_array(actions_json)

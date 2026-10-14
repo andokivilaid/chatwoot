@@ -19,11 +19,7 @@ module Concerns::CaptainCapabilitiesHelpers
     return [] if account_user.blank?
 
     captain_capabilities.filter do |capability|
-      next false if exposure.present? && !capability['exposure']&.include?(exposure.to_s)
-      next false if route.present? && !capability_route_matches?(capability['route'], route)
-      next false unless capability_handler_resolvable?(capability)
-
-      permitted_capability?(capability, account_user)
+      capability_available?(capability, exposure, route) && permitted_capability?(capability, account_user)
     end
   end
 
@@ -48,6 +44,14 @@ module Concerns::CaptainCapabilitiesHelpers
     []
   end
   module_function :load_captain_capabilities
+
+  def capability_available?(capability, exposure, route)
+    return false if exposure.present? && !capability['exposure']&.include?(exposure.to_s)
+    return false if route.present? && !capability_route_matches?(capability['route'], route)
+
+    capability_handler_resolvable?(capability)
+  end
+  module_function :capability_available?
 
   def capability_handler_resolvable?(capability)
     capability_handler_class(capability).present?

@@ -13,8 +13,10 @@ class Captain::Tools::Admin::UpdateAutomationRuleService < Captain::Tools::Admin
   param :active, type: :boolean, desc: 'Whether the rule is active'
   param :execution_delay, type: :integer, desc: 'Delay in minutes before actions run'
 
+  # rubocop:disable Metrics/ParameterLists -- keyword args must match the update_automation_rule LLM tool schema
   def execute(automation_rule_id:, name: nil, event_name: nil, conditions_json: nil, actions_json: nil,
               description: nil, active: nil, execution_delay: nil)
+    # rubocop:enable Metrics/ParameterLists
     capability_service(
       Captain::Capabilities::AutomationRules::Update,
       automation_rule_id: automation_rule_id,

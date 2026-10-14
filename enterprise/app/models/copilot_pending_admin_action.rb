@@ -53,6 +53,7 @@ class CopilotPendingAdminAction < ApplicationRecord
   private
 
   def expire_existing_pending_actions
-    copilot_thread.copilot_pending_admin_actions.pending.update_all(status: self.class.statuses[:expired])
+    # Bulk status flip on sibling rows; no validations or callbacks apply to expiring them.
+    copilot_thread.copilot_pending_admin_actions.pending.update_all(status: self.class.statuses[:expired]) # rubocop:disable Rails/SkipsModelValidations
   end
 end
