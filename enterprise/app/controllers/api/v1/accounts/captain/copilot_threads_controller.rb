@@ -33,9 +33,7 @@ class Api::V1::Accounts::Captain::CopilotThreadsController < Api::V1::Accounts::
   def tool_results
     @copilot_thread = Current.account.copilot_threads.find_by!(id: params[:id], user: Current.user)
 
-    if @copilot_thread.pending_client_tool_call.blank?
-      return render json: { error: 'No pending client tool call' }, status: :unprocessable_entity
-    end
+    return render json: { error: 'No pending client tool call' }, status: :unprocessable_entity if @copilot_thread.pending_client_tool_call.blank?
 
     Captain::Copilot::ToolResultsJob.perform_later(
       assistant: @copilot_thread.assistant,

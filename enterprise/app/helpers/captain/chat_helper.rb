@@ -34,10 +34,7 @@ module Captain::ChatHelper
   end
 
   def setup_tools(llm_chat)
-    @tools&.each do |tool|
-      llm_chat = llm_chat.with_tool(tool)
-    end
-    llm_chat
+    Array(@tools).reduce(llm_chat) { |chat_with_tools, tool| chat_with_tools.with_tool(tool) }
   end
 
   def setup_system_instructions(chat)

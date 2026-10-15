@@ -23,13 +23,9 @@ class Captain::Capabilities::PermissionChecker
     when 'administrator'
       @account_user.administrator?
     when 'agent'
-      @account_user.administrator? || @account_user.agent?
+      default_agent_access?
     when 'conversation_access'
       conversation_access?
-    when 'contact_manage'
-      custom_role_permission?('contact_manage') || default_agent_access?
-    when 'knowledge_base_manage'
-      custom_role_permission?('knowledge_base_manage') || default_agent_access?
     else
       custom_role_permission?(@permission) || default_agent_access?
     end

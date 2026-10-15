@@ -1,20 +1,14 @@
 class Captain::Capabilities::Conversations::Search < Captain::Capabilities::Base
   include Captain::Copilot::ConversationAccess
 
+  # rubocop:disable Metrics/ParameterLists -- keyword args mirror the search_conversations tool schema
   def call(query: nil, status: nil, inbox_id: nil, contact_id: nil, priority: nil, labels: nil)
-    conversations = permissible_conversations
-    conversations = conversations.where(inbox_id: inbox_id) if inbox_id.present?
-    conversations = conversations.where(contact_id: contact_id) if contact_id.present?
-    conversations = conversations.where(status: status) if valid_status?(status)
-    conversations = conversations.where(priority: priority) if valid_priority?(priority)
+    # rubocop:enable Metrics/ParameterLists
+    conversations = permissible_conversations.where(
+      attribute_filters(inbox_id: inbox_id, contact_id: contact_id, status: status, priority: priority)
+    )
     conversations = conversations.tagged_with(labels, any: true) if labels.present?
-
-    if query.present?
-      conversations = conversations.joins(:contact).where(
-        'conversations.display_id::text ILIKE :query OR contacts.name ILIKE :query OR contacts.email ILIKE :query',
-        query: "%#{query}%"
-      )
-    end
+    conversations = search_by_query(conversations, query) if query.present?
 
     return 'No conversations found' unless conversations.exists?
 
@@ -29,12 +23,20 @@ class Captain::Capabilities::Conversations::Search < Captain::Capabilities::Base
 
   private
 
-  def valid_status?(status)
-    status.present? && Conversation.statuses.key?(status)
+  def attribute_filters(inbox_id:, contact_id:, status:, priority:)
+    {
+      inbox_id: inbox_id,
+      contact_id: contact_id,
+      status: (status if Conversation.statuses.key?(status)),
+      priority: (priority if Conversation.priorities.key?(priority))
+    }.compact_blank
   end
 
-  def valid_priority?(priority)
-    priority.present? && Conversation.priorities.key?(priority)
+  def search_by_query(conversations, query)
+    conversations.joins(:contact).where(
+      'conversations.display_id::text ILIKE :query OR contacts.name ILIKE :query OR contacts.email ILIKE :query',
+      query: "%#{query}%"
+    )
   end
 
   def permissible_conversations

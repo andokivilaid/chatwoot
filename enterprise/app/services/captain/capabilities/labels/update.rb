@@ -5,12 +5,7 @@ class Captain::Capabilities::Labels::Update < Captain::Capabilities::Base
 
     authorize!(label, :update?)
 
-    updates = {}.tap do |attrs|
-      attrs[:title] = title unless title.nil?
-      attrs[:description] = description unless description.nil?
-      attrs[:color] = color unless color.nil?
-      attrs[:show_on_sidebar] = show_on_sidebar unless show_on_sidebar.nil?
-    end
+    updates = { title: title, description: description, color: color, show_on_sidebar: show_on_sidebar }.compact
     return 'No changes were provided' if updates.blank?
 
     label.update!(updates)

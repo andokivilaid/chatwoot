@@ -1,5 +1,7 @@
 class Captain::Capabilities::Campaigns::Create < Captain::Capabilities::Base
+  # rubocop:disable Metrics/ParameterLists -- keyword args mirror the create_campaign tool schema
   def call(title:, message:, inbox_id:, description: nil, enabled: true, trigger_rules_json: nil, audience_json: nil)
+    # rubocop:enable Metrics/ParameterLists
     campaign = account.campaigns.new(
       title: title,
       description: description,

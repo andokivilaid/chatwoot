@@ -1,5 +1,7 @@
 class Captain::Capabilities::AutomationRules::Create < Captain::Capabilities::Base
+  # rubocop:disable Metrics/ParameterLists -- keyword args mirror the create_automation_rule tool schema
   def call(name:, event_name:, conditions_json:, actions_json:, description: nil, active: true, execution_delay: nil)
+    # rubocop:enable Metrics/ParameterLists
     authorize!(AutomationRule.new(account: account), :create?)
 
     conditions = parse_json_array(conditions_json, 'conditions_json')
@@ -11,13 +13,8 @@ class Captain::Capabilities::AutomationRules::Create < Captain::Capabilities::Ba
     return 'Delayed automations are not enabled for this account' if execution_delay.present? && !account.feature_enabled?('delayed_automations')
 
     rule = account.automation_rules.create!(
-      name: name,
-      description: description,
-      event_name: event_name,
-      active: active.nil? || active,
-      execution_delay: execution_delay,
-      conditions: conditions,
-      actions: actions
+      name: name, description: description, event_name: event_name, active: active.nil? || active,
+      execution_delay: execution_delay, conditions: conditions, actions: actions
     )
 
     "Automation rule created successfully.\n#{format_automation_rule(rule)}"
