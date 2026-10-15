@@ -139,6 +139,13 @@ json.provider resource.channel.try(:provider)
 ## Telegram Attributes
 json.bot_name resource.channel.try(:bot_name) if resource.telegram?
 
+## Matrix Attributes
+if resource.matrix?
+  json.homeserver_url resource.channel.homeserver_url
+  json.matrix_user_id resource.channel.user_id
+  json.matrix_registration_command resource.channel.registration_command if Current.account_user&.administrator?
+end
+
 ### WhatsApp Channel
 if resource.whatsapp?
   message_templates = resource.channel.try(:message_templates)

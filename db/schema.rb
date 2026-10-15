@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_08_28_154500) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_14_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -644,6 +644,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_08_28_154500) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["line_channel_id"], name: "index_channel_line_on_line_channel_id", unique: true
+  end
+
+  create_table "channel_matrix", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.string "homeserver_url", null: false
+    t.string "user_id", null: false
+    t.string "as_token", null: false
+    t.string "hs_token", null: false
+    t.string "sender_localpart", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "user_id"], name: "index_channel_matrix_on_account_id_and_user_id", unique: true
   end
 
   create_table "channel_sms", force: :cascade do |t|

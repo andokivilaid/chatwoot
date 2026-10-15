@@ -212,6 +212,7 @@ export default {
       if (
         this.isATwilioChannel ||
         this.isALineChannel ||
+        this.isAMatrixChannel ||
         this.isAPIInbox ||
         (this.isAnEmailChannel && !this.inbox.provider) ||
         this.shouldShowWhatsAppConfiguration ||

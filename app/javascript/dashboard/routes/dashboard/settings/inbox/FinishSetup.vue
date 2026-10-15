@@ -35,6 +35,7 @@ const {
   isAWhatsAppChannel,
   isAFacebookInbox,
   isATelegramChannel,
+  isAMatrixChannel,
   isATwilioWhatsAppChannel,
 } = useInbox(route.params.inbox_id);
 
@@ -222,6 +223,21 @@ onMounted(() => {
             v-if="isASmsInbox"
             lang="html"
             :script="currentInbox.callback_webhook_url"
+          />
+        </div>
+        <div
+          v-if="isAMatrixChannel && currentInbox.matrix_registration_command"
+          class="w-[70%] max-w-[70%] ml-[15%] text-left"
+        >
+          <p class="mt-8 font-medium text-n-slate-11">
+            {{ $t('INBOX_MGMT.ADD.MATRIX_CHANNEL.REGISTRATION.TITLE') }}
+          </p>
+          <p class="mb-2 text-sm text-n-slate-11">
+            {{ $t('INBOX_MGMT.ADD.MATRIX_CHANNEL.REGISTRATION.SUBTITLE') }}
+          </p>
+          <woot-code
+            lang="yaml"
+            :script="currentInbox.matrix_registration_command"
           />
         </div>
         <EmailInboxFinish

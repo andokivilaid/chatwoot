@@ -344,6 +344,7 @@ export default {
         this.isAnEmailChannel ||
         this.isASmsInbox ||
         this.isATelegramChannel ||
+        this.isAMatrixChannel ||
         this.isALineChannel ||
         this.isAnInstagramChannel ||
         (this.isATiktokChannel && tiktokAttachmentSupported)
